@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0E11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinTrack">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<title>FinTrack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --primary:#FCD535; --primary-active:#F0B90B; --primary-disabled:#3a3a1f;
+  --ink:#181A20; --body-c:#EAECEF; --muted:#707A8A; --muted-strong:#929AA5;
+  --hairline:#2B3139; --canvas-dark:#0B0E11; --canvas-light:#FFFFFF;
+  --surface-card:#1E2329; --surface-elevated:#2B3139; --surface-soft:#F5F5F5;
+  --on-primary:#181A20; --on-dark:#FFFFFF;
+  --up:#0ECB81; --down:#F6465D; --info:#3B82F6;
+  --r-sm:4px; --r-md:6px; --r-lg:8px; --r-xl:12px; --r-pill:9999px;
+  --sp-xxs:4px; --sp-xs:8px; --sp-sm:12px; --sp-md:16px; --sp-lg:24px; --sp-xl:32px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;background:var(--canvas-dark);}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  color:var(--body-c);
+  overscroll-behavior-y:none;
+}
+.mono{font-family:'Inter',monospace;}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:var(--hairline);border-radius:4px;}
+
+/* ---------- SPLASH ---------- */
+#splash{
+  position:fixed; inset:0; background:var(--canvas-dark); z-index:9999;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+  transition:opacity .4s ease;
+}
+#splash .logo-box{
+  width:88px;height:88px;border-radius:22px;background:var(--surface-card);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:34px;color:var(--primary);
+  animation:pulse 1.4s ease-in-out infinite;
+}
+#splash .brand{font-weight:800;font-size:20px;color:var(--on-dark);letter-spacing:-0.3px;}
+#splash .spin{
+  width:28px;height:28px;border-radius:50%;
+  border:3px solid var(--hairline); border-top-color:var(--primary);
+  animation:spin .8s linear infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+#splash.hide{opacity:0;pointer-events:none;}
+
+/* ---------- LAYOUT ---------- */
+#app{display:none; min-height:100vh; background:var(--canvas-dark);}
+#app.ready{display:block;}
+
+.sidebar{
+  display:none; position:fixed; top:0; left:0; bottom:0; width:240px;
+  background:var(--canvas-dark); border-right:1px solid var(--hairline);
+  padding:24px 16px; flex-direction:column;
+}
+.sidebar .brand{color:var(--primary); font-weight:800; font-size:20px; padding:0 8px 24px; letter-spacing:-0.3px;}
+.sidebar nav{display:flex;flex-direction:column;gap:4px;flex:1;}
+.nav-item{
+  display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:var(--r-md);
+  color:var(--muted); font-size:14px; font-weight:500; border-left:3px solid transparent;
+  text-decoration:none; background:transparent; border-top:none;border-right:none;border-bottom:none; width:100%; text-align:left;
+}
+.nav-item svg{width:20px;height:20px;flex-shrink:0;}
+.nav-item.active{color:var(--on-dark); background:var(--surface-card); border-left-color:var(--primary);}
+.sidebar .add-btn{margin-top:auto;}
+
+.bottom-nav{
+  position:fixed; left:0; right:0; bottom:0; height:64px; background:var(--canvas-dark);
+  border-top:1px solid var(--hairline); display:flex; z-index:40;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.bottom-nav .nav-item{
+  flex:1; flex-direction:column; gap:2px; border-left:none; border-top:3px solid transparent;
+  border-radius:0; font-size:10px; padding:8px 4px; align-items:center;
+}
+.bottom-nav .nav-item.active{background:transparent; border-top-color:var(--primary); color:var(--primary);}
+.bottom-nav .nav-item svg{width:20px;height:20px;}
+
+main{padding:16px; padding-bottom:calc(80px + env(safe-area-inset-bottom)); max-width:720px; margin:0 auto;}
+.page{display:none; animation:fadeIn .25s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+@media(min-width:768px){
+  .sidebar{display:flex;}
+  .bottom-nav{display:none;}
+  main{margin-left:240px; padding:24px; padding-bottom:24px; max-width:720px;}
+  #fab{right:calc(50% - 360px + 20px) !important;}
+}
+
+/* ---------- HERO ---------- */
+.hero{
+  background:var(--canvas-dark); border:1px solid var(--hairline); border-radius:var(--r-xl);
+  padding:20px; margin-bottom:20px;
+}
+.hero-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;}
+.hero-top .greet{color:var(--primary); font-weight:800; font-size:16px;}
+.hero-top .sub{color:var(--muted); font-size:12px; margin-top:2px;}
+.avatar{
+  width:36px;height:36px;border-radius:50%;background:var(--surface-card);
+  display:flex;align-items:center;justify-content:center;color:var(--primary);font-weight:700;font-size:13px;
+  border:1px solid var(--hairline);
+}
+.balance-label{font-size:11px;font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);}
+.balance-amount{font-size:30px;font-weight:800;letter-spacing:-1px;color:var(--on-dark);margin:4px 0 16px;font-family:'Inter',monospace;}
+.balance-amount.neg{color:var(--down);}
+.mini-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.mini-card{background:var(--surface-card);border-radius:var(--r-lg);padding:12px 14px;}
+.mini-card .lbl{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.mini-card .val{font-size:16px;font-weight:700;font-family:'Inter',monospace;}
+.mini-card.income .val{color:var(--up);}
+.mini-card.expense .val{color:var(--down);}
+.rate-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted-strong);margin-bottom:6px;}
+.progress-track{height:6px;background:var(--surface-elevated);border-radius:var(--r-pill);overflow:hidden;}
+.progress-fill{height:100%;background:var(--primary);border-radius:var(--r-pill);transition:width .6s ease-out;}
+.progress-fill.up{background:var(--up);}
+
+/* ---------- SECTIONS / CARDS ---------- */
+.section-head{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px;}
+.section-title{font-size:17px;font-weight:700;letter-spacing:-0.3px;color:var(--on-dark);}
+.link-btn{background:none;border:none;color:var(--primary);font-size:13px;font-weight:600;}
+.card{background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-xl);padding:16px;margin-bottom:12px;}
+
+.goal-card{background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-xl);padding:18px;margin-bottom:14px;}
+.goal-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.goal-emoji{font-size:26px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--surface-elevated);border-radius:var(--r-lg);}
+.goal-name{font-weight:600;font-size:15px;color:var(--on-dark);flex:1;}
+.icon-btn{background:none;border:none;color:var(--muted);padding:6px;border-radius:var(--r-sm);}
+.icon-btn:hover{color:var(--on-dark);}
+.goal-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;font-size:12px;}
+.goal-stats .lbl{color:var(--muted);margin-bottom:2px;}
+.goal-stats .val{font-weight:700;font-size:13px;font-family:'Inter',monospace;}
+.goal-stats .val.gold{color:var(--primary);}
+.goal-meta{font-size:12px;color:var(--muted-strong);margin-bottom:8px;}
+.goal-alloc-line{font-size:12px;color:var(--primary);margin-top:6px;cursor:pointer;display:flex;align-items:center;gap:4px;}
+.alloc-box{margin-top:10px;border-top:1px solid var(--hairline);padding-top:10px;display:none;}
+.alloc-box.open{display:block;}
+.alloc-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--hairline);font-size:13px;}
+.alloc-item:last-child{border-bottom:none;}
+.alloc-item .type{flex:1;color:var(--body-c);}
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:var(--r-pill);background:var(--surface-elevated);color:var(--muted-strong);}
+.badge.auto{background:rgba(252,213,53,0.15);color:var(--primary);}
+.badge.pct{background:rgba(252,213,53,0.15);color:var(--primary);font-family:'Inter',monospace;}
+.badge.green{background:rgba(14,203,129,0.15);color:var(--up);}
+.alloc-total{display:flex;justify-content:space-between;font-size:12px;color:var(--muted-strong);margin-top:8px;font-weight:600;}
+.goal-actions{display:flex;gap:10px;margin-top:14px;}
+
+/* ---------- BUTTONS ---------- */
+.btn{height:40px;padding:0 20px;border-radius:var(--r-md);font-size:14px;font-weight:600;border:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+.btn-primary{background:var(--primary);color:var(--on-primary);}
+.btn-primary:active{background:var(--primary-active);}
+.btn-outline{background:transparent;border:1px solid var(--hairline);color:var(--on-dark);}
+.btn-outline.gold{border-color:var(--primary);color:var(--primary);}
+.btn-danger{background:var(--down);color:#fff;}
+.btn-sm{height:32px;padding:0 14px;font-size:12px;}
+.btn-block{width:100%;}
+.btn:disabled{background:var(--primary-disabled);color:var(--muted);}
+
+/* ---------- EMPTY STATE ---------- */
+.empty-state{text-align:center;padding:40px 16px;color:var(--muted);}
+.empty-state .icon{font-size:44px;margin-bottom:12px;}
+.empty-state .title{color:var(--on-dark);font-weight:700;font-size:15px;margin-bottom:6px;}
+.empty-state .body{font-size:13px;line-height:1.6;margin-bottom:16px;}
+
+/* ---------- TRANSACTIONS ---------- */
+.filter-row{display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px;}
+.chip{flex-shrink:0;padding:8px 14px;border-radius:var(--r-pill);background:var(--surface-card);border:1px solid var(--hairline);color:var(--muted-strong);font-size:12px;font-weight:600;white-space:nowrap;}
+.chip.active{background:var(--primary);color:var(--on-primary);border-color:var(--primary);}
+.month-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;}
+.month-nav .lbl{font-weight:700;font-size:14px;min-width:140px;text-align:center;}
+.search-input{width:100%;height:40px;background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-lg);color:var(--on-dark);padding:0 14px;font-size:14px;margin-bottom:12px;}
+.date-group-head{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin:16px 0 6px;display:flex;justify-content:space-between;}
+.tx-row{display:flex;align-items:center;gap:12px;background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:12px 14px;margin-bottom:8px;}
+.tx-icon{width:38px;height:38px;border-radius:var(--r-lg);background:var(--surface-elevated);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.tx-info{flex:1;min-width:0;}
+.tx-note{font-size:14px;font-weight:600;color:var(--on-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tx-cat{font-size:12px;color:var(--muted);}
+.tx-right{text-align:right;}
+.tx-amount{font-size:15px;font-weight:700;font-family:'Inter',monospace;}
+.tx-amount.income{color:var(--up);}
+.tx-amount.expense{color:var(--down);}
+.tx-alloc-badge{font-size:10px;color:var(--up);margin-top:2px;}
+.tx-del{background:none;border:none;color:var(--muted);padding:4px;flex-shrink:0;}
+
+/* ---------- CHARTS / ANALYTICS ---------- */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.stat-card{background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:12px;text-align:center;}
+.stat-card .lbl{font-size:10px;color:var(--muted);margin-bottom:4px;}
+.stat-card .val{font-size:14px;font-weight:700;font-family:'Inter',monospace;}
+.chart-wrap{background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-xl);padding:16px;margin-bottom:16px;}
+.chart-wrap h4{margin:0 0 12px;font-size:14px;font-weight:600;color:var(--on-dark);}
+.chart-canvas-box{position:relative;height:220px;}
+.alloc-grid{display:flex;flex-direction:column;gap:8px;}
+.alloc-grid-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface-elevated);border-radius:var(--r-md);padding:10px 12px;font-size:13px;}
+.advice-box{background:rgba(252,213,53,0.08);border:1px solid rgba(252,213,53,0.25);border-radius:var(--r-lg);padding:14px;font-size:13px;color:var(--body-c);line-height:1.6;margin-top:6px;}
+
+/* export panel */
+.export-panel{display:flex;flex-direction:column;gap:12px;}
+.period-tabs{display:flex;gap:6px;overflow-x:auto;}
+.export-btns{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* ---------- SETTINGS ---------- */
+.settings-group{margin-bottom:18px;}
+.settings-group h4{font-size:11px;text-transform:uppercase;letter-spacing:0.6px;color:var(--muted);margin:0 0 8px;}
+.settings-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface-card);border:1px solid var(--hairline);padding:14px;font-size:14px;}
+.settings-row:first-of-type{border-radius:var(--r-lg) var(--r-lg) 0 0;}
+.settings-row:last-of-type{border-radius:0 0 var(--r-lg) var(--r-lg);border-top:none;}
+.settings-row + .settings-row{border-top:1px solid var(--hairline);}
+.settings-row.single{border-radius:var(--r-lg);}
+.settings-row input[type=text]{background:transparent;border:none;color:var(--on-dark);text-align:right;font-size:14px;width:130px;}
+.toggle{position:relative;width:42px;height:24px;background:var(--surface-elevated);border-radius:var(--r-pill);border:none;flex-shrink:0;}
+.toggle.on{background:var(--primary);}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;}
+.toggle.on::after{left:20px;background:var(--on-primary);}
+
+/* ---------- MODAL / SHEET ---------- */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.overlay.show{display:flex;}
+@media(min-width:768px){.overlay{align-items:center;}}
+.sheet{
+  background:var(--canvas-dark); border:1px solid var(--hairline); width:100%; max-width:480px;
+  border-radius:var(--r-xl) var(--r-xl) 0 0; max-height:92vh; overflow-y:auto;
+  animation:slideUp .28s cubic-bezier(.34,1.2,.64,1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+@media(min-width:768px){.sheet{border-radius:var(--r-xl); max-height:88vh;}}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--hairline);position:sticky;top:0;background:var(--canvas-dark);z-index:2;}
+.sheet-head h3{margin:0;font-size:16px;font-weight:700;color:var(--on-dark);}
+.sheet-body{padding:18px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted-strong);margin-bottom:6px;}
+.field input[type=text],.field input[type=number],.field select,.field textarea{
+  width:100%;height:44px;background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-md);
+  color:var(--on-dark);padding:0 14px;font-size:14px;
+}
+.field textarea{height:auto;padding:10px 14px;}
+.field .hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.field .hint.warn{color:var(--down);}
+.emoji-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.emoji-grid button{background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-md);height:38px;font-size:18px;}
+.emoji-grid button.sel{border-color:var(--primary);background:rgba(252,213,53,0.1);}
+.type-toggle{display:flex;background:var(--surface-card);border-radius:var(--r-pill);padding:4px;margin-bottom:16px;}
+.type-toggle button{flex:1;border:none;background:transparent;color:var(--muted);padding:10px;border-radius:var(--r-pill);font-weight:600;font-size:13px;}
+.type-toggle button.active{background:var(--primary);color:var(--on-primary);}
+.radio-row{display:flex;flex-direction:column;gap:8px;}
+.radio-opt{display:flex;align-items:center;gap:10px;background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-md);padding:12px;font-size:13px;}
+.radio-opt input{accent-color:var(--primary);}
+.live-calc{background:rgba(252,213,53,0.08);border:1px solid rgba(252,213,53,0.25);border-radius:var(--r-lg);padding:12px 14px;font-size:13px;margin-bottom:16px;}
+.live-calc b{color:var(--primary);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:var(--surface-card);border:1px solid var(--hairline);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;}
+
+/* numpad entry */
+.numpad-header{background:var(--canvas-dark);padding:20px 18px 12px;text-align:center;}
+.numpad-amount{font-size:32px;font-weight:800;font-family:'Inter',monospace;color:var(--on-dark);letter-spacing:-1px;}
+.numpad-cats{display:flex;gap:8px;overflow-x:auto;padding:12px 18px;}
+.numpad-cat{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 12px;border-radius:var(--r-lg);background:var(--surface-card);border:1px solid var(--hairline);font-size:11px;color:var(--muted-strong);}
+.numpad-cat.active{border-color:var(--primary);background:rgba(252,213,53,0.1);color:var(--primary);}
+.numpad-cat .em{font-size:20px;}
+.numpad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--hairline);margin:0 18px;border-radius:var(--r-lg);overflow:hidden;}
+.numpad-grid button{background:var(--surface-card);border:none;color:var(--on-dark);font-size:20px;font-weight:600;padding:16px 0;}
+.numpad-grid button:active{background:var(--surface-elevated);}
+.date-select{display:flex;gap:8px;padding:14px 18px;}
+.date-select button{flex:1;}
+
+/* toast / snackbar */
+#toast-wrap{position:fixed;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding-bottom:calc(80px + env(safe-area-inset-bottom));z-index:500;pointer-events:none;}
+.toast{background:var(--surface-elevated);color:var(--on-dark);padding:12px 18px;border-radius:var(--r-lg);font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,.4);display:flex;align-items:center;gap:12px;animation:slideUp .25s ease;pointer-events:all;border:1px solid var(--hairline);}
+.toast button{background:none;border:none;color:var(--primary);font-weight:700;font-size:12px;}
+
+/* FAB */
+#fab{
+  position:fixed; bottom:calc(80px + env(safe-area-inset-bottom)); right:20px; width:56px;height:56px;border-radius:50%;
+  background:var(--primary); color:var(--on-primary); border:none; font-size:26px; z-index:50;
+  box-shadow:0 4px 14px rgba(252,213,53,0.35); display:flex;align-items:center;justify-content:center;
+  transition:transform .15s;
+}
+#fab:active{transform:scale(0.95);}
+
+/* loading overlay */
+#loading-overlay{position:fixed;inset:0;background:rgba(11,14,17,0.5);z-index:9998;display:none;align-items:center;justify-content:center;}
+#loading-overlay.show{display:flex;}
+#loading-overlay .spin{width:32px;height:32px;border-radius:50%;border:3px solid var(--hairline);border-top-color:var(--primary);animation:spin .8s linear infinite;}
+
+.install-banner{background:var(--surface-card);border:1px solid var(--primary);border-radius:var(--r-lg);padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;}
+.install-banner button{margin-left:auto;}
+
+@media(prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="logo-box">FT</div>
+  <div class="brand">FinTrack</div>
+  <div class="spin"></div>
+</div>
+
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">FinTrack</div>
+    <nav id="sidebar-nav"></nav>
+    <button class="btn btn-primary btn-block add-btn" onclick="openQuickEntry()">+ Tambah Transaksi</button>
+  </aside>
+
+  <main id="main"></main>
+
+  <nav class="bottom-nav" id="bottom-nav"></nav>
+
+  <button id="fab" onclick="openQuickEntry()">+</button>
+</div>
+
+<div id="toast-wrap"></div>
+<div id="loading-overlay"><div class="spin"></div></div>
+
+<!-- ============ MODAL: Quick Entry ============ -->
+<div class="overlay" id="modal-entry">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button class="icon-btn" onclick="closeModal('modal-entry')">✕</button>
+      <h3>Catat transaksi</h3>
+      <span style="width:24px"></span>
+    </div>
+    <div class="numpad-header">
+      <div class="type-toggle">
+        <button id="type-expense" class="active" onclick="setEntryType('expense')">Pengeluaran</button>
+        <button id="type-income" onclick="setEntryType('income')">Pemasukan</button>
+      </div>
+      <div class="numpad-amount" id="numpad-amount">Rp 0</div>
+    </div>
+    <div class="numpad-cats" id="numpad-cats"></div>
+    <div style="padding:0 18px;">
+      <input type="text" class="search-input" id="entry-note" placeholder="Catatan (opsional)" style="margin-bottom:0;">
+    </div>
+    <div class="numpad-grid" id="numpad-grid"></div>
+    <div class="date-select">
+      <button class="btn btn-outline btn-sm" id="date-today" onclick="setEntryDate('today')">Hari ini</button>
+      <button class="btn btn-outline btn-sm" id="date-yesterday" onclick="setEntryDate('yesterday')">Kemarin</button>
+      <input type="date" class="search-input" id="entry-date-custom" style="margin-bottom:0;height:32px;font-size:12px;" onchange="setEntryDate('custom')">
+    </div>
+    <div style="padding:16px 18px;">
+      <button class="btn btn-primary btn-block" id="save-entry-btn" onclick="saveEntry()">Simpan pengeluaran</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Add/Edit Goal ============ -->
+<div class="overlay" id="modal-goal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h3 id="goal-modal-title">Tambah target</h3>
+      <button class="icon-btn" onclick="closeModal('modal-goal')">✕</button>
+    </div>
+    <div class="sheet-body">
+      <input type="hidden" id="goal-id">
+      <div class="field">
+        <label>Nama target</label>
+        <input type="text" id="goal-name" placeholder="Contoh: Dana Nikah">
+      </div>
+      <div class="field">
+        <label>Pilih ikon</label>
+        <div class="emoji-grid" id="goal-emoji-grid"></div>
+      </div>
+      <div class="field">
+        <label>Target jumlah (Rp)</label>
+        <input type="number" id="goal-target" placeholder="0">
+      </div>
+      <div class="field">
+        <label>Sudah terkumpul (Rp)</label>
+        <input type="number" id="goal-saved" placeholder="0">
+        <div class="hint" id="goal-saved-hint"></div>
+      </div>
+      <div class="field">
+        <label>Jangka waktu</label>
+        <select id="goal-duration">
+          <option value="1">1 tahun</option>
+          <option value="2">2 tahun</option>
+          <option value="3">3 tahun</option>
+          <option value="4">4 tahun</option>
+          <option value="5">5 tahun</option>
+        </select>
+      </div>
+      <div class="toggle-row">
+        <span>🔔 Pengingat menabung</span>
+        <button class="toggle" id="goal-reminder-toggle" onclick="toggleEl('goal-reminder-toggle')"></button>
+      </div>
+      <div class="field" id="goal-reminder-day-field">
+        <label>Tanggal pengingat tiap bulan</label>
+        <input type="number" id="goal-reminder-day" min="1" max="28" value="1">
+      </div>
+      <div class="live-calc" id="goal-live-calc">Perlu ditabung per bulan: <b>Rp 0</b></div>
+
+      <div class="toggle-row">
+        <span>Setup alokasi dari pemasukan sekarang?</span>
+        <button class="toggle" id="goal-alloc-toggle" onclick="toggleEl('goal-alloc-toggle')"></button>
+      </div>
+      <div id="goal-alloc-fields" style="display:none;">
+        <div class="field">
+          <label>Jenis alokasi</label>
+          <input type="text" id="goal-alloc-type" placeholder="[Goal name] — bulanan">
+        </div>
+        <div class="field">
+          <label>Persentase (%)</label>
+          <input type="number" id="goal-alloc-pct" min="0" max="100" placeholder="0">
+        </div>
+        <div class="toggle-row">
+          <span>Otomatis setiap pemasukan?</span>
+          <button class="toggle on" id="goal-alloc-auto-toggle" onclick="toggleEl('goal-alloc-auto-toggle')"></button>
+        </div>
+        <div class="hint">Bisa ditambah lagi nanti dari halaman Target.</div>
+      </div>
+
+      <button class="btn btn-primary btn-block" style="margin-top:8px;" onclick="saveGoal()">Simpan target</button>
+      <button class="btn btn-danger btn-block" style="margin-top:10px;display:none;" id="goal-delete-btn" onclick="removeGoal()">Hapus target</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Deposit to Goal ============ -->
+<div class="overlay" id="modal-deposit">
+  <div class="sheet">
+    <div class="sheet-head"><h3>Setor tabungan</h3><button class="icon-btn" onclick="closeModal('modal-deposit')">✕</button></div>
+    <div class="sheet-body">
+      <input type="hidden" id="deposit-goal-id">
+      <div class="field"><label>Jumlah setoran (Rp)</label><input type="number" id="deposit-amount" placeholder="0"></div>
+      <button class="btn btn-primary btn-block" onclick="saveDeposit()">Setor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Allocation Item ============ -->
+<div class="overlay" id="modal-alloc">
+  <div class="sheet">
+    <div class="sheet-head"><h3 id="alloc-modal-title">Tambah alokasi</h3><button class="icon-btn" onclick="closeModal('modal-alloc')">✕</button></div>
+    <div class="sheet-body">
+      <input type="hidden" id="alloc-goal-id"><input type="hidden" id="alloc-item-id">
+      <div class="field">
+        <label>Jenis alokasi</label>
+        <input type="text" id="alloc-type" placeholder='Contoh: "Cicilan motor 30%", "Dana darurat 20%"'>
+      </div>
+      <div class="field">
+        <label>Persentase (%)</label>
+        <input type="number" id="alloc-pct" min="0" max="100" placeholder="0" oninput="updateAllocTotalHint()">
+        <div class="hint" id="alloc-total-hint">Total alokasi: 0%</div>
+      </div>
+      <div class="field">
+        <label>Mode</label>
+        <div class="radio-row">
+          <label class="radio-opt"><input type="radio" name="alloc-mode" value="auto" checked> Otomatis — gunakan setiap ada pemasukan</label>
+          <label class="radio-opt"><input type="radio" name="alloc-mode" value="manual"> Manual — tanyakan saat ada pemasukan</label>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="saveAllocItem()">Simpan</button>
+      <button class="btn btn-danger btn-block" style="margin-top:10px;display:none;" id="alloc-delete-btn" onclick="removeAllocItem()">Hapus alokasi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Welcome ============ -->
+<div class="overlay" id="modal-welcome">
+  <div class="sheet">
+    <div class="sheet-body" style="text-align:center;padding:32px 24px;">
+      <div style="font-size:40px;margin-bottom:10px;">👋</div>
+      <h3 style="color:#fff;">Selamat datang di FinTrack</h3>
+      <p style="color:var(--muted);font-size:13px;line-height:1.6;">Mulai dengan menambahkan target keuangan dan mencatat transaksi harianmu.</p>
+      <button class="btn btn-primary btn-block" onclick="closeModal('modal-welcome'); goToPage('goals');">Ayo mulai</button>
+      <button class="btn btn-outline btn-block" style="margin-top:10px;" onclick="closeModal('modal-welcome')">Nanti saja</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MODAL: Confirm generic ============ -->
+<div class="overlay" id="modal-confirm">
+  <div class="sheet">
+    <div class="sheet-body">
+      <h3 id="confirm-title" style="color:#fff;">Konfirmasi</h3>
+      <p id="confirm-body" style="color:var(--muted);font-size:13px;"></p>
+      <button class="btn btn-danger btn-block" id="confirm-ok-btn">Ya, lanjutkan</button>
+      <button class="btn btn-outline btn-block" style="margin-top:10px;" onclick="closeModal('modal-confirm')">Batal</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==============================================================
+   KONFIGURASI WAJIB DIISI
+   Tempel URL Web App Apps Script kamu (hasil Deploy > Web app) di bawah ini.
+   Contoh: "https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxx/exec"
+   ============================================================== */
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJ9tIKMVKPtrCm-AWAeHcxdBrKw-M4vrqc52px42pJXlFEnOsWAxlB8k_vU8FmgEqo/exec";
+
+/* ============================== CONSTANTS ============================== */
+var EXPENSE_CATEGORIES = [
+  {id:'food',label:'Makan & Minum',emoji:'🍜'},{id:'transport',label:'Transportasi',emoji:'🚗'},
+  {id:'shopping',label:'Belanja',emoji:'🛍️'},{id:'coffee',label:'Kopi & Snack',emoji:'☕'},
+  {id:'health',label:'Kesehatan',emoji:'💊'},{id:'education',label:'Pendidikan',emoji:'📚'},
+  {id:'entertainment',label:'Hiburan',emoji:'🎮'},{id:'bills',label:'Tagihan',emoji:'🧾'},
+  {id:'savings',label:'Tabungan',emoji:'💰'},{id:'other',label:'Lainnya',emoji:'📦'}
+];
+var INCOME_CATEGORIES = [
+  {id:'salary',label:'Gaji',emoji:'💼'},{id:'freelance',label:'Freelance',emoji:'💻'},
+  {id:'bonus',label:'Bonus',emoji:'🎁'},{id:'transfer',label:'Transfer',emoji:'↔️'},
+  {id:'other',label:'Lainnya',emoji:'📦'}
+];
+var GOAL_EMOJIS = ['🎯','💍','🏍️','🏠','🚗','✈️','🎓','👶','💻','🏥','🛡️','💰','🎁','⛱️','📱'];
+var ICONS = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  target:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
+};
+var NAV = [
+  {id:'dashboard',label:'Beranda',icon:'home'},
+  {id:'goals',label:'Target',icon:'target'},
+  {id:'transactions',label:'Transaksi',icon:'list'},
+  {id:'analytics',label:'Analitik',icon:'chart'},
+  {id:'settings',label:'Pengaturan',icon:'settings'}
+];
+var PERIODS = [{id:'daily',label:'Harian'},{id:'weekly',label:'Mingguan'},{id:'monthly',label:'Bulanan'},{id:'semester',label:'Semester'},{id:'yearly',label:'Tahunan'}];
+
+/* ============================== STATE ============================== */
+var STATE = {
+  transactions: [], goals: [], settings: {},
+  page: 'dashboard',
+  entryType: 'expense', entryCategory: null, entryAmountStr: '0', entryDate: todayISO(), entryNote: '',
+  txFilter: 'all', txMonth: new Date(), txCategoryFilter: null, txSearch: '',
+  analyticsMonth: new Date(),
+  goalAllocExpanded: {},
+  exportPeriod: 'monthly',
+  charts: {}
+};
+
+/* ============================== UTIL ============================== */
+function todayISO(d){ d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function formatIDR(n){ n = Math.round(Number(n)||0); return 'Rp ' + n.toLocaleString('id-ID'); }
+function formatShort(n){ n=Number(n)||0; if(n>=1000000) return 'Rp '+(n/1000000).toFixed(1)+'jt'; if(n>=1000) return 'Rp '+(n/1000).toFixed(0)+'rb'; return 'Rp '+n; }
+function formatPct(n){ return Math.round(Number(n)||0)+'%'; }
+var MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+var DAYS_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+function formatDateID(iso){ var d = new Date(iso+'T00:00:00'); return d.getDate()+' '+MONTHS_ID[d.getMonth()]+' '+d.getFullYear(); }
+function formatDateHeader(iso){ var d = new Date(iso+'T00:00:00'); return DAYS_ID[d.getDay()]+', '+d.getDate()+' '+MONTHS_ID[d.getMonth()]; }
+function catInfo(type, id){ var list = type==='income'?INCOME_CATEGORIES:EXPENSE_CATEGORIES; return list.filter(function(c){return c.id===id;})[0] || {label:id,emoji:'📦'}; }
+function uid(){ return 'id_'+Math.random().toString(36).slice(2)+Date.now(); }
+function el(id){ return document.getElementById(id); }
+function toggleEl(id){ el(id).classList.toggle('on'); }
+function isOn(id){ return el(id).classList.contains('on'); }
+
+function showLoading(v){ el('loading-overlay').classList.toggle('show', v); }
+function toast(msg, actionLabel, actionFn){
+  var wrap = el('toast-wrap');
+  var t = document.createElement('div');
+  t.className='toast';
+  t.innerHTML = '<span>'+msg+'</span>';
+  if(actionLabel){
+    var b = document.createElement('button');
+    b.textContent = actionLabel;
+    b.onclick = function(){ actionFn && actionFn(); wrap.removeChild(t); };
+    t.appendChild(b);
+  }
+  wrap.appendChild(t);
+  setTimeout(function(){ if(t.parentNode) wrap.removeChild(t); }, 5000);
+}
+
+function openModal(id){ el(id).classList.add('show'); }
+function closeModal(id){ el(id).classList.remove('show'); }
+
+function gs(fn){
+  var args = Array.prototype.slice.call(arguments, 1);
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_URL') === 0){
+    toast('APPS_SCRIPT_URL belum diisi di index.html — lihat PANDUAN_SETUP.md');
+    return Promise.reject(new Error('APPS_SCRIPT_URL belum dikonfigurasi'));
+  }
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    // text/plain menghindari CORS preflight (OPTIONS) yang tidak didukung Apps Script
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: fn, args: args })
+  })
+    .then(function(res){ return res.json(); })
+    .then(function(json){
+      if(!json.success) throw new Error(json.error || 'Terjadi kesalahan pada server');
+      return json.data;
+    });
+}
+
+/* ============================== BOOT ============================== */
+function boot(){
+  try {
+    var cached = localStorage.getItem('fintrack_cache_v1');
+    if(cached){
+      var c = JSON.parse(cached);
+      STATE.transactions = c.transactions||[]; STATE.goals = c.goals||[]; STATE.settings = c.settings||{};
+    }
+  } catch(e){}
+
+  renderNav();
+  gs('getInitialData').then(function(data){
+    STATE.transactions = data.transactions; STATE.goals = data.goals; STATE.settings = data.settings;
+    localStorage.setItem('fintrack_cache_v1', JSON.stringify(data));
+    finishBoot();
+  }).catch(function(err){
+    console.error(err);
+    finishBoot();
+    toast('Gagal memuat data terbaru, menampilkan data tersimpan.');
+  });
+}
+
+function finishBoot(){
+  el('splash').classList.add('hide');
+  el('app').classList.add('ready');
+  setTimeout(function(){ el('splash').style.display='none'; }, 450);
+  goToPage('dashboard');
+  if(!STATE.settings.onboarded || STATE.settings.onboarded === 'false' || STATE.settings.onboarded === false){
+    if(STATE.transactions.length===0 && STATE.goals.length===0){
+      openModal('modal-welcome');
+    }
+    gs('updateSettings', {onboarded:true});
+  }
+  registerSW();
+}
+
+function registerSW(){
+  if('serviceWorker' in navigator){
+    try{
+      navigator.serviceWorker.register('./sw.js').catch(function(){});
+    }catch(e){}
+  }
+}
+var deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault(); deferredInstallPrompt = e; renderSettingsInstallBanner();
+});
+
+/* ============================== NAV ============================== */
+function renderNav(){
+  el('sidebar-nav').innerHTML = NAV.map(function(n){
+    return '<button class="nav-item" data-nav="'+n.id+'" onclick="goToPage(\''+n.id+'\')">'+ICONS[n.icon]+'<span>'+n.label+'</span></button>';
+  }).join('');
+  el('bottom-nav').innerHTML = NAV.map(function(n){
+    return '<button class="nav-item" data-nav="'+n.id+'" onclick="goToPage(\''+n.id+'\')">'+ICONS[n.icon]+'<span>'+n.label+'</span></button>';
+  }).join('');
+}
+function goToPage(id){
+  STATE.page = id;
+  document.querySelectorAll('[data-nav]').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-nav')===id); });
+  render();
+}
+
+/* ============================== MASTER RENDER ============================== */
+function render(){
+  var m = el('main');
+  if(STATE.page==='dashboard') m.innerHTML = renderDashboard();
+  else if(STATE.page==='goals') m.innerHTML = renderGoalsPage();
+  else if(STATE.page==='transactions') m.innerHTML = renderTransactionsPage();
+  else if(STATE.page==='analytics') m.innerHTML = renderAnalyticsPage();
+  else if(STATE.page==='settings') m.innerHTML = renderSettingsPage();
+
+  if(STATE.page==='analytics') setTimeout(renderCharts, 30);
+}
+
+/* ============================== DASHBOARD ============================== */
+function monthTx(list, d){
+  d = d || new Date();
+  return list.filter(function(t){ var td=new Date(t.date+'T00:00:00'); return td.getFullYear()===d.getFullYear() && td.getMonth()===d.getMonth(); });
+}
+function sumType(list, type){ return list.filter(function(t){return t.type===type;}).reduce(function(s,t){return s+Number(t.amount);},0); }
+
+function renderDashboard(){
+  var thisMonth = monthTx(STATE.transactions);
+  var income = sumType(thisMonth,'income'), expense = sumType(thisMonth,'expense');
+  var balance = income-expense;
+  var savingRate = income ? Math.round((income-expense)/income*100) : 0;
+  var hour = new Date().getHours();
+  var greet = hour<11?'Selamat pagi':hour<15?'Selamat siang':hour<18?'Selamat sore':'Selamat malam';
+  var initials = (STATE.settings.userName||'K').slice(0,2).toUpperCase();
+
+  var sortedGoals = STATE.goals.slice().sort(function(a,b){ return monthsLeft(a)-monthsLeft(b); }).slice(0,3);
+
+  var goalsHtml = STATE.goals.length===0 ? emptyState('🎯','Mulai dengan target pertamamu','Tentukan tujuan keuangan dan FinTrack akan membantu kamu mencapainya dengan alokasi otomatis.','Tambah target',"openGoalModal()") :
+    sortedGoals.map(function(g){ return dashGoalCard(g); }).join('');
+
+  var recent = STATE.transactions.slice(0,5);
+  var recentHtml = recent.length===0 ? emptyState('🧾','Belum ada transaksi','Catat pemasukan dan pengeluaran untuk melihat alokasi keuanganmu.','Catat sekarang',"openQuickEntry()") :
+    recent.map(function(t){ return txRow(t,false); }).join('');
+
+  return ''+
+  '<div class="hero">'+
+    '<div class="hero-top"><div><div class="greet">FinTrack</div><div class="sub">'+greet+', '+esc(STATE.settings.userName||'Kamu')+'</div></div><div class="avatar">'+initials+'</div></div>'+
+    '<div class="balance-label">Saldo bersih bulan ini</div>'+
+    '<div class="balance-amount '+(balance<0?'neg':'')+'">'+formatIDR(balance)+'</div>'+
+    '<div class="mini-cards">'+
+      '<div class="mini-card income"><div class="lbl">Pemasukan</div><div class="val">'+formatIDR(income)+'</div></div>'+
+      '<div class="mini-card expense"><div class="lbl">Pengeluaran</div><div class="val">'+formatIDR(expense)+'</div></div>'+
+    '</div>'+
+    '<div class="rate-row"><span>Saving rate bulan ini</span><span>'+savingRate+'%</span></div>'+
+    '<div class="progress-track"><div class="progress-fill up" style="width:'+Math.max(0,Math.min(100,savingRate))+'%"></div></div>'+
+  '</div>'+
+  '<div class="section-head"><div class="section-title">Target aktif</div><button class="link-btn" onclick="goToPage(\'goals\')">Lihat semua</button></div>'+
+  goalsHtml+
+  '<div class="section-head"><div class="section-title">Transaksi terbaru</div><button class="link-btn" onclick="goToPage(\'transactions\')">Lihat semua</button></div>'+
+  recentHtml;
+}
+
+function monthsLeft(g){
+  var remain = Math.max(0, g.durationYears*12);
+  return remain;
+}
+function totalAllocPct(g){ return (g.allocations||[]).reduce(function(s,a){return s+Number(a.percentage||0);},0); }
+function monthlyRequired(g){ var d=g.durationYears*12; return d? Math.max(0,(g.targetAmount-g.savedAmount)/d) : 0; }
+
+function dashGoalCard(g){
+  var pct = g.targetAmount? Math.min(100, Math.round(g.savedAmount/g.targetAmount*100)) : 0;
+  var aid = 'dash-alloc-'+g.id;
+  var alloc = g.allocations||[];
+  return '<div class="goal-card">'+
+    '<div class="goal-top"><div class="goal-emoji">'+g.emoji+'</div><div class="goal-name">'+esc(g.name)+'</div><div class="badge pct">'+pct+'%</div></div>'+
+    '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+g.color+'"></div></div>'+
+    '<div class="goal-meta" style="margin-top:8px;">Terkumpul '+formatIDR(g.savedAmount)+' dari '+formatIDR(g.targetAmount)+'</div>'+
+    (alloc.length ? '<div class="goal-alloc-line" onclick="toggleDashAlloc(\''+aid+'\')">Alokasi: '+totalAllocPct(g)+'% dari pemasukan ▾</div>' : '')+
+    '<div class="alloc-box" id="'+aid+'">'+
+      alloc.map(function(a){ return '<div class="alloc-item"><span class="type">'+esc(a.type)+'</span><span class="badge pct">'+a.percentage+'%</span></div>'; }).join('')+
+      (alloc.length? '<div class="alloc-total"><span>Total</span><span>'+totalAllocPct(g)+'%</span></div>' : '')+
+    '</div>'+
+  '</div>';
+}
+function toggleDashAlloc(id){ el(id).classList.toggle('open'); }
+
+function emptyState(icon,title,body,btnLabel,onclick){
+  return '<div class="empty-state"><div class="icon">'+icon+'</div><div class="title">'+title+'</div><div class="body">'+body+'</div>'+
+    (btnLabel?'<button class="btn btn-primary" onclick="'+onclick+'">'+btnLabel+'</button>':'')+'</div>';
+}
+
+function txRow(t){
+  var c = catInfo(t.type, t.category);
+  var allocBadge = (t.type==='income' && t.allocations && t.allocations.length) ? '<div class="tx-alloc-badge">✓ Alokasi '+t.allocations.length+' target</div>' : '';
+  return '<div class="tx-row">'+
+    '<div class="tx-icon">'+c.emoji+'</div>'+
+    '<div class="tx-info"><div class="tx-note">'+esc(t.note||c.label)+'</div><div class="tx-cat">'+c.label+' · '+formatDateID(t.date)+'</div>'+allocBadge+'</div>'+
+    '<div class="tx-right"><div class="tx-amount '+t.type+'">'+(t.type==='income'?'+':'−')+formatIDR(t.amount)+'</div></div>'+
+    '<button class="tx-del" onclick="confirmDeleteTx(\''+t.id+'\')">🗑</button>'+
+  '</div>';
+}
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+/* ============================== GOALS PAGE ============================== */
+function renderGoalsPage(){
+  var html = '<div class="section-head"><div class="section-title">Target tabungan</div><button class="btn btn-outline gold btn-sm" onclick="openGoalModal()">+ Tambah target</button></div>';
+  if(STATE.goals.length===0){
+    html += emptyState('🎯','Belum ada target tabungan','Buat target nikah, motor, rumah, atau goals lainnya. Atur alokasi otomatis untuk setiap pemasukan.','Tambah target pertama','openGoalModal()');
+    return html;
+  }
+  html += STATE.goals.map(function(g){ return goalFullCard(g); }).join('');
+  return html;
+}
+
+function goalFullCard(g){
+  var pct = g.targetAmount ? Math.min(100, Math.round(g.savedAmount/g.targetAmount*100)) : 0;
+  var perMonth = monthlyRequired(g);
+  var eta = new Date(); eta.setMonth(eta.getMonth()+g.durationYears*12);
+  var alloc = g.allocations||[];
+  var expanded = !!STATE.goalAllocExpanded[g.id];
+  return '<div class="goal-card">'+
+    '<div class="goal-top"><div class="goal-emoji">'+g.emoji+'</div><div class="goal-name">'+esc(g.name)+'</div>'+
+      '<button class="icon-btn" onclick="openGoalModal(\''+g.id+'\')">✎</button>'+
+      '<button class="icon-btn" onclick="confirmDeleteGoal(\''+g.id+'\')">🗑</button>'+
+    '</div>'+
+    '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+g.color+'"></div></div>'+
+    '<div class="goal-stats">'+
+      '<div><div class="lbl">Terkumpul</div><div class="val">'+formatShort(g.savedAmount)+'</div></div>'+
+      '<div><div class="lbl">Target</div><div class="val">'+formatShort(g.targetAmount)+'</div></div>'+
+      '<div><div class="lbl">Per bulan</div><div class="val gold">'+formatShort(perMonth)+'</div></div>'+
+    '</div>'+
+    '<div class="goal-meta">'+g.durationYears+' tahun · selesai sekitar '+MONTHS_ID[eta.getMonth()]+' '+eta.getFullYear()+'</div>'+
+    (g.reminderEnabled ? '<div class="goal-meta">🔔 Pengingat tgl '+g.reminderDay+' setiap bulan</div>' : '')+
+    '<div class="goal-alloc-line" onclick="toggleGoalAlloc(\''+g.id+'\')">Alokasi dari pemasukan '+(expanded?'▴':'▾')+'</div>'+
+    '<div class="alloc-box '+(expanded?'open':'')+'" id="goal-alloc-'+g.id+'">'+
+      (alloc.length===0 ? '<div class="hint" style="padding:6px 0;">Belum ada alokasi. Tap \'Tambah alokasi\' untuk mulai.</div>' :
+        alloc.map(function(a){
+          return '<div class="alloc-item" onclick="openAllocModal(\''+g.id+'\',\''+a.id+'\')" style="cursor:pointer;">'+
+            '<button class="icon-btn" onclick="event.stopPropagation();confirmDeleteAlloc(\''+g.id+'\',\''+a.id+'\')">🗑</button>'+
+            '<span class="type">'+esc(a.type)+'</span><span class="badge pct">'+a.percentage+'%</span>'+
+            '<span class="badge '+(a.isAutomatic?'auto':'')+'">'+(a.isAutomatic?'Otomatis':'Manual')+'</span>'+
+          '</div>';
+        }).join('') + '<div class="alloc-total"><span>Total dari pemasukan</span><span>'+totalAllocPct(g)+'%</span></div>')+
+      '<button class="btn btn-outline gold btn-sm" style="margin-top:10px;" onclick="openAllocModal(\''+g.id+'\')">+ Tambah alokasi</button>'+
+    '</div>'+
+    '<div class="goal-actions"><button class="btn btn-primary btn-block" onclick="openDepositModal(\''+g.id+'\')">Setor tabungan</button></div>'+
+  '</div>';
+}
+function toggleGoalAlloc(id){ STATE.goalAllocExpanded[id] = !STATE.goalAllocExpanded[id]; render(); }
+
+/* ---- Goal modal ---- */
+function openGoalModal(id){
+  var g = id ? STATE.goals.filter(function(x){return x.id===id;})[0] : null;
+  el('goal-id').value = id || '';
+  el('goal-modal-title').textContent = g ? 'Edit target' : 'Tambah target';
+  el('goal-name').value = g ? g.name : '';
+  el('goal-target').value = g ? g.targetAmount : '';
+  el('goal-saved').value = g ? g.savedAmount : '';
+  el('goal-duration').value = g ? g.durationYears : '1';
+  el('goal-reminder-day').value = g ? g.reminderDay : 1;
+  el('goal-reminder-toggle').classList.toggle('on', g ? !!g.reminderEnabled : false);
+  el('goal-delete-btn').style.display = g ? 'block' : 'none';
+  el('goal-alloc-toggle').classList.remove('on');
+  el('goal-alloc-fields').style.display='none';
+  el('goal-alloc-type').value=''; el('goal-alloc-pct').value='';
+  el('goal-alloc-auto-toggle').classList.add('on');
+  renderEmojiGrid(g ? g.emoji : GOAL_EMOJIS[0]);
+  updateGoalLiveCalc();
+  ['goal-target','goal-saved','goal-duration'].forEach(function(id2){ el(id2).oninput = updateGoalLiveCalc; el(id2).onchange = updateGoalLiveCalc; });
+  el('goal-alloc-toggle').onclick = function(){ toggleEl('goal-alloc-toggle'); el('goal-alloc-fields').style.display = isOn('goal-alloc-toggle') ? 'block':'none'; if(isOn('goal-alloc-toggle') && !el('goal-alloc-type').value){ el('goal-alloc-type').value = (el('goal-name').value||'Target')+' — bulanan'; } };
+  openModal('modal-goal');
+}
+function renderEmojiGrid(selected){
+  el('goal-emoji-grid').innerHTML = GOAL_EMOJIS.map(function(e){
+    return '<button type="button" class="'+(e===selected?'sel':'')+'" onclick="selectEmoji(this,\''+e+'\')">'+e+'</button>';
+  }).join('');
+  el('goal-emoji-grid').dataset.selected = selected;
+}
+function selectEmoji(btn, e){
+  el('goal-emoji-grid').querySelectorAll('button').forEach(function(b){b.classList.remove('sel');});
+  btn.classList.add('sel'); el('goal-emoji-grid').dataset.selected = e;
+}
+function updateGoalLiveCalc(){
+  var target = Number(el('goal-target').value)||0, saved = Number(el('goal-saved').value)||0, dur = Number(el('goal-duration').value)||1;
+  var perMonth = dur>0 ? Math.max(0,(target-saved)/(dur*12)) : 0;
+  el('goal-live-calc').innerHTML = 'Perlu ditabung per bulan: <b>'+formatIDR(perMonth)+'</b>';
+  el('goal-saved-hint').textContent = (target && saved>=target) ? '' : '';
+}
+function saveGoal(){
+  var id = el('goal-id').value;
+  var target = Number(el('goal-target').value)||0, saved = Number(el('goal-saved').value)||0;
+  if(!el('goal-name').value.trim()){ toast('Nama target wajib diisi'); return; }
+  if(target>0 && saved>target){ toast('Target harus lebih besar dari yang terkumpul.'); return; }
+  var payload = {
+    name: el('goal-name').value.trim(),
+    emoji: el('goal-emoji-grid').dataset.selected || '🎯',
+    targetAmount: target, savedAmount: saved,
+    durationYears: Number(el('goal-duration').value)||1,
+    reminderEnabled: isOn('goal-reminder-toggle'),
+    reminderDay: Number(el('goal-reminder-day').value)||1
+  };
+  showLoading(true);
+  if(id){
+    gs('updateGoal', id, payload).then(function(g){
+      var idx = STATE.goals.findIndex(function(x){return x.id===id;});
+      STATE.goals[idx]=g; persistCache(); showLoading(false); closeModal('modal-goal'); render(); toast('Target diperbarui');
+    });
+  } else {
+    if(isOn('goal-alloc-toggle') && Number(el('goal-alloc-pct').value)>0){
+      payload.allocations = [{type: el('goal-alloc-type').value || (payload.name+' — bulanan'), percentage: Number(el('goal-alloc-pct').value), isAutomatic: isOn('goal-alloc-auto-toggle')}];
+    }
+    gs('addGoal', payload).then(function(g){
+      STATE.goals.push(g); persistCache(); showLoading(false); closeModal('modal-goal'); render(); toast('Target ditambahkan');
+    });
+  }
+}
+function removeGoal(){
+  var id = el('goal-id').value;
+  confirmAction('Hapus target?','Semua alokasi pada target ini juga akan dihapus.', function(){
+    showLoading(true);
+    gs('deleteGoal', id).then(function(){
+      STATE.goals = STATE.goals.filter(function(g){return g.id!==id;});
+      persistCache(); showLoading(false); closeModal('modal-goal'); closeModal('modal-confirm'); render(); toast('Target dihapus');
+    });
+  });
+}
+function confirmDeleteGoal(id){
+  el('goal-id').value = id;
+  removeGoal();
+}
+
+/* ---- Deposit modal ---- */
+function openDepositModal(goalId){ el('deposit-goal-id').value = goalId; el('deposit-amount').value=''; openModal('modal-deposit'); }
+function saveDeposit(){
+  var id = el('deposit-goal-id').value, amt = Number(el('deposit-amount').value)||0;
+  if(amt<=0){ toast('Masukkan jumlah setoran'); return; }
+  showLoading(true);
+  gs('depositToGoal', id, amt).then(function(g){
+    var idx = STATE.goals.findIndex(function(x){return x.id===id;});
+    STATE.goals[idx]=g; persistCache(); showLoading(false); closeModal('modal-deposit'); render(); toast('Setoran berhasil ditambahkan');
+  });
+}
+
+/* ---- Allocation item modal ---- */
+function openAllocModal(goalId, itemId){
+  var g = STATE.goals.filter(function(x){return x.id===goalId;})[0];
+  var item = itemId ? (g.allocations||[]).filter(function(a){return a.id===itemId;})[0] : null;
+  el('alloc-goal-id').value = goalId; el('alloc-item-id').value = itemId||'';
+  el('alloc-modal-title').textContent = item ? 'Edit alokasi' : 'Tambah alokasi';
+  el('alloc-type').value = item ? item.type : (g.name+' — bulanan');
+  el('alloc-pct').value = item ? item.percentage : '';
+  document.querySelectorAll('input[name=alloc-mode]').forEach(function(r){ r.checked = item ? (item.isAutomatic ? r.value==='auto' : r.value==='manual') : r.value==='auto'; });
+  el('alloc-delete-btn').style.display = item ? 'block' : 'none';
+  updateAllocTotalHint();
+  openModal('modal-alloc');
+}
+function updateAllocTotalHint(){
+  var goalId = el('alloc-goal-id').value;
+  var g = STATE.goals.filter(function(x){return x.id===goalId;})[0];
+  if(!g) return;
+  var itemId = el('alloc-item-id').value;
+  var others = (g.allocations||[]).filter(function(a){return a.id!==itemId;}).reduce(function(s,a){return s+Number(a.percentage||0);},0);
+  var total = others + (Number(el('alloc-pct').value)||0);
+  var hint = el('alloc-total-hint');
+  hint.textContent = 'Total alokasi: '+total+'%';
+  hint.className = 'hint' + (total>100 ? ' warn':'');
+  if(total>100) hint.textContent += ' — Perhatian: total alokasi melebihi 100%';
+}
+function saveAllocItem(){
+  var goalId = el('alloc-goal-id').value, itemId = el('alloc-item-id').value;
+  var payload = { type: el('alloc-type').value.trim()||'Alokasi', percentage: Number(el('alloc-pct').value)||0, isAutomatic: document.querySelector('input[name=alloc-mode]:checked').value==='auto' };
+  showLoading(true);
+  var p = itemId ? gs('updateAllocationItem', goalId, itemId, payload) : gs('addAllocationItem', goalId, payload);
+  p.then(function(g){
+    var idx = STATE.goals.findIndex(function(x){return x.id===goalId;});
+    STATE.goals[idx]=g; persistCache(); showLoading(false); closeModal('modal-alloc'); render(); toast('Alokasi disimpan');
+  });
+}
+function removeAllocItem(){
+  var goalId = el('alloc-goal-id').value, itemId = el('alloc-item-id').value;
+  showLoading(true);
+  gs('deleteAllocationItem', goalId, itemId).then(function(g){
+    var idx = STATE.goals.findIndex(function(x){return x.id===goalId;});
+    STATE.goals[idx]=g; persistCache(); showLoading(false); closeModal('modal-alloc'); render(); toast('Alokasi dihapus');
+  });
+}
+function confirmDeleteAlloc(goalId,itemId){
+  el('alloc-goal-id').value=goalId; el('alloc-item-id').value=itemId;
+  removeAllocItem();
+}
+
+/* ============================== TRANSACTIONS PAGE ============================== */
+function renderTransactionsPage(){
+  var m = STATE.txMonth;
+  var list = STATE.transactions.filter(function(t){
+    var d = new Date(t.date+'T00:00:00');
+    if(d.getFullYear()!==m.getFullYear() || d.getMonth()!==m.getMonth()) return false;
+    if(STATE.txFilter!=='all' && t.type!==STATE.txFilter) return false;
+    if(STATE.txCategoryFilter && t.category!==STATE.txCategoryFilter) return false;
+    if(STATE.txSearch && !( (t.note||'').toLowerCase().includes(STATE.txSearch.toLowerCase()) || (t.category||'').toLowerCase().includes(STATE.txSearch.toLowerCase()) )) return false;
+    return true;
+  });
+
+  var allCats = EXPENSE_CATEGORIES.concat(INCOME_CATEGORIES).filter(function(c,i,arr){ return arr.findIndex(function(x){return x.id===c.id;})===i; });
+
+  var html = '<div class="section-title" style="margin-bottom:12px;">Transaksi</div>';
+  html += '<div class="filter-row">'+['all','expense','income'].map(function(f){
+    var lbl = f==='all'?'Semua':f==='expense'?'Pengeluaran':'Pemasukan';
+    return '<button class="chip '+(STATE.txFilter===f?'active':'')+'" onclick="setTxFilter(\''+f+'\')">'+lbl+'</button>';
+  }).join('')+'</div>';
+
+  html += '<div class="month-nav"><button class="icon-btn" onclick="shiftTxMonth(-1)">‹</button><span class="lbl">'+MONTHS_ID[m.getMonth()]+' '+m.getFullYear()+'</span><button class="icon-btn" onclick="shiftTxMonth(1)">›</button></div>';
+
+  html += '<div class="filter-row"><button class="chip '+(!STATE.txCategoryFilter?'active':'')+'" onclick="setTxCategory(null)">Semua kategori</button>'+
+    allCats.map(function(c){ return '<button class="chip '+(STATE.txCategoryFilter===c.id?'active':'')+'" onclick="setTxCategory(\''+c.id+'\')">'+c.emoji+' '+c.label+'</button>'; }).join('')+'</div>';
+
+  html += '<input type="text" class="search-input" placeholder="Cari catatan atau kategori..." value="'+esc(STATE.txSearch)+'" oninput="setTxSearch(this.value)">';
+
+  if(list.length===0){
+    html += emptyState('📋','Tidak ada transaksi','Belum ada transaksi pada filter ini.','Catat sekarang','openQuickEntry()');
+    return html;
+  }
+
+  var grouped = {};
+  list.forEach(function(t){ (grouped[t.date]=grouped[t.date]||[]).push(t); });
+  var dates = Object.keys(grouped).sort().reverse();
+  dates.forEach(function(date){
+    var items = grouped[date];
+    var inc = sumType(items,'income'), exp = sumType(items,'expense');
+    html += '<div class="date-group-head"><span>'+formatDateHeader(date)+'</span><span>Masuk '+formatShort(inc)+' · Keluar '+formatShort(exp)+'</span></div>';
+    html += items.map(function(t){ return txRow(t); }).join('');
+  });
+  return html;
+}
+function setTxFilter(f){ STATE.txFilter=f; render(); }
+function setTxCategory(c){ STATE.txCategoryFilter=c; render(); }
+function setTxSearch(v){ STATE.txSearch=v; render(); }
+function shiftTxMonth(n){ STATE.txMonth = new Date(STATE.txMonth.getFullYear(), STATE.txMonth.getMonth()+n, 1); render(); }
+
+function confirmDeleteTx(id){
+  confirmAction('Hapus transaksi?','Alokasi terkait pada target akan dikembalikan.', function(){
+    showLoading(true);
+    gs('deleteTransaction', id).then(function(){
+      STATE.transactions = STATE.transactions.filter(function(t){return t.id!==id;});
+      gs('listGoals').then(function(goals){ STATE.goals=goals; persistCache(); showLoading(false); closeModal('modal-confirm'); render(); toast('Transaksi dihapus'); });
+    });
+  });
+}
+
+/* ============================== ANALYTICS PAGE ============================== */
+function renderAnalyticsPage(){
+  var m = STATE.analyticsMonth;
+  var thisMonth = monthTx(STATE.transactions, m);
+  var income = sumType(thisMonth,'income'), expense = sumType(thisMonth,'expense');
+  var savingRate = income ? Math.round((income-expense)/income*100) : 0;
+
+  var byCat = {};
+  thisMonth.filter(function(t){return t.type==='expense';}).forEach(function(t){ byCat[t.category]=(byCat[t.category]||0)+t.amount; });
+  var catArr = Object.keys(byCat).map(function(k){ return {category:k, total:byCat[k]}; }).sort(function(a,b){return b.total-a.total;});
+
+  var allocSummary = [];
+  var totalAlloc = 0;
+  STATE.goals.forEach(function(g){ (g.allocations||[]).forEach(function(a){ allocSummary.push({goal:g.name, type:a.type, pct:a.percentage}); totalAlloc+=Number(a.percentage||0); }); });
+
+  var html = '<div class="month-nav"><button class="icon-btn" onclick="shiftAnalyticsMonth(-1)">‹</button><span class="lbl">'+MONTHS_ID[m.getMonth()]+' '+m.getFullYear()+'</span><button class="icon-btn" onclick="shiftAnalyticsMonth(1)">›</button></div>';
+
+  html += '<div class="stats-row">'+
+    '<div class="stat-card"><div class="lbl">Pemasukan</div><div class="val" style="color:var(--up)">'+formatShort(income)+'</div></div>'+
+    '<div class="stat-card"><div class="lbl">Pengeluaran</div><div class="val" style="color:var(--down)">'+formatShort(expense)+'</div></div>'+
+    '<div class="stat-card"><div class="lbl">Saving Rate</div><div class="val" style="color:var(--primary)">'+savingRate+'%</div></div>'+
+  '</div>';
+
+  html += '<div class="chart-wrap"><h4>Pemasukan vs Pengeluaran — 6 Bulan Terakhir</h4><div class="chart-canvas-box"><canvas id="chart-bar"></canvas></div></div>';
+
+  if(catArr.length){
+    html += '<div class="chart-wrap"><h4>Distribusi pengeluaran per kategori</h4><div class="chart-canvas-box"><canvas id="chart-donut"></canvas></div></div>';
+  } else {
+    html += '<div class="chart-wrap"><h4>Distribusi pengeluaran per kategori</h4>'+emptyState('📊','Belum ada data','Catat minimal beberapa transaksi untuk melihat analisis.',null,null)+'</div>';
+  }
+
+  html += '<div class="chart-wrap"><h4>Alokasi pemasukan bulan ini</h4>';
+  if(allocSummary.length===0){
+    html += '<div class="hint">Belum ada alokasi aktif. Atur di halaman Target.</div>';
+  } else {
+    html += '<div class="alloc-grid">'+allocSummary.map(function(a){ return '<div class="alloc-grid-row"><span>'+esc(a.goal)+' — '+esc(a.type)+'</span><span class="badge pct">'+a.pct+'%</span></div>'; }).join('')+'</div>';
+    html += '<div class="alloc-total" style="margin-top:10px;"><span>Total dialokasikan</span><span>'+totalAlloc+'%</span></div>';
+    if(totalAlloc<100) html += '<div class="hint">Sisa '+(100-totalAlloc)+'% belum dialokasikan</div>';
+  }
+  html += '</div>';
+
+  html += '<div class="chart-wrap"><h4>Saran keuangan</h4><div class="advice-box">'+buildAdvice(income,expense,savingRate,totalAlloc,allocSummary)+'</div></div>';
+
+  html += renderExportPanel();
+  return html;
+}
+function shiftAnalyticsMonth(n){ STATE.analyticsMonth = new Date(STATE.analyticsMonth.getFullYear(), STATE.analyticsMonth.getMonth()+n, 1); render(); }
+
+function buildAdvice(income,expense,savingRate,totalAlloc,allocSummary){
+  var lines = [];
+  if(income===0) return 'Catat pemasukanmu bulan ini untuk mendapatkan saran keuangan yang lebih akurat.';
+  if(savingRate<10) lines.push('Saving rate kamu masih di bawah 10%. Coba tinjau kembali pengeluaran terbesarmu bulan ini.');
+  else if(savingRate>=30) lines.push('Kerja bagus! Saving rate kamu di atas 30% bulan ini.');
+  lines.push('Alokasi kamu mencakup '+totalAlloc+'% dari pemasukan. Target ideal 70–90%.');
+  allocSummary.forEach(function(a){ if(a.pct>60) lines.push('Alokasi ke '+a.goal+' ('+a.pct+'%) cukup tinggi — pertimbangkan diversifikasi.'); });
+  return lines.join(' ');
+}
+
+function renderCharts(){
+  gs('getAnalytics', todayISO(STATE.analyticsMonth)).then(function(data){
+    var barCanvas = el('chart-bar');
+    if(barCanvas){
+      if(STATE.charts.bar) STATE.charts.bar.destroy();
+      STATE.charts.bar = new Chart(barCanvas, {
+        type:'bar',
+        data:{ labels: data.last6Months.map(function(x){return x.label;}),
+          datasets:[
+            {label:'Pemasukan', data:data.last6Months.map(function(x){return x.income;}), backgroundColor:'#0ECB81', borderRadius:4},
+            {label:'Pengeluaran', data:data.last6Months.map(function(x){return x.expense;}), backgroundColor:'#F6465D', borderRadius:4}
+          ]},
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{legend:{labels:{color:'#EAECEF'}}},
+          scales:{ x:{ticks:{color:'#707A8A'},grid:{color:'#2B3139'}}, y:{ticks:{color:'#707A8A'},grid:{color:'#2B3139'}} } }
+      });
+    }
+    var donutCanvas = el('chart-donut');
+    if(donutCanvas){
+      var byCat = {};
+      monthTx(STATE.transactions, STATE.analyticsMonth).filter(function(t){return t.type==='expense';}).forEach(function(t){ byCat[t.category]=(byCat[t.category]||0)+t.amount; });
+      var labels = Object.keys(byCat).map(function(k){ return catInfo('expense',k).label; });
+      var values = Object.values(byCat);
+      var palette = ['#FCD535','#0ECB81','#F6465D','#3B82F6','#2DBDB6','#929AA5','#8B5CF6','#EC4899'];
+      if(STATE.charts.donut) STATE.charts.donut.destroy();
+      STATE.charts.donut = new Chart(donutCanvas, {
+        type:'doughnut',
+        data:{ labels:labels, datasets:[{data:values, backgroundColor:palette, borderColor:'#1E2329', borderWidth:2}] },
+        options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom', labels:{color:'#EAECEF', boxWidth:12, padding:12}}} }
+      });
+    }
+  });
+}
+
+/* ---- Export panel ---- */
+function renderExportPanel(){
+  return '<div class="chart-wrap export-panel"><h4>📄 Ekspor laporan</h4>'+
+    '<div class="period-tabs">'+PERIODS.map(function(p){ return '<button class="chip '+(STATE.exportPeriod===p.id?'active':'')+'" onclick="setExportPeriod(\''+p.id+'\')">'+p.label+'</button>'; }).join('')+'</div>'+
+    '<div class="export-btns">'+
+      '<button class="btn btn-primary" onclick="doExport(\'Pdf\')">📄 PDF</button>'+
+      '<button class="btn btn-outline gold" onclick="doExport(\'Docx\')">📝 DOCX</button>'+
+      '<button class="btn btn-outline gold" onclick="doExport(\'Excel\')">📊 Excel</button>'+
+    '</div></div>';
+}
+function setExportPeriod(p){ STATE.exportPeriod=p; render(); }
+function doExport(kind){
+  showLoading(true);
+  var ref = todayISO(STATE.analyticsMonth);
+  gs('exportReport'+kind, STATE.exportPeriod, ref).then(function(res){
+    showLoading(false);
+    downloadBase64(res.base64, res.filename, res.mime);
+    toast('Laporan berhasil diekspor');
+  }).catch(function(err){ showLoading(false); toast('Gagal mengekspor laporan'); console.error(err); });
+}
+function downloadBase64(base64, filename, mime){
+  var byteChars = atob(base64);
+  var byteNumbers = new Array(byteChars.length);
+  for(var i=0;i<byteChars.length;i++) byteNumbers[i]=byteChars.charCodeAt(i);
+  var blob = new Blob([new Uint8Array(byteNumbers)], {type:mime});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+
+/* ============================== SETTINGS PAGE ============================== */
+function renderSettingsPage(){
+  var s = STATE.settings;
+  var initials = (s.userName||'K').slice(0,2).toUpperCase();
+  var html = '<div class="card" style="text-align:center;padding:24px 16px;">'+
+    '<div class="avatar" style="width:56px;height:56px;font-size:18px;margin:0 auto 10px;">'+initials+'</div>'+
+    '<div style="font-weight:700;color:#fff;">'+esc(s.userName||'Kamu')+'</div>'+
+    '<div class="hint">Data tersimpan di Google Sheets kamu</div></div>';
+
+  html += '<div id="install-banner-slot"></div>';
+
+  html += '<div class="settings-group"><h4>Preferensi</h4>'+
+    '<div class="settings-row"><span>Nama profil</span><input type="text" id="setting-username" value="'+esc(s.userName||'')+'" onblur="saveSettingField(\'userName\', this.value)"></div>'+
+    '<div class="settings-row"><span>Mata uang</span><span style="color:var(--muted);">IDR</span></div>'+
+  '</div>';
+
+  html += '<div class="settings-group"><h4>Notifikasi</h4>'+
+    '<div class="settings-row single"><span>Aktifkan pengingat tabungan</span><button class="toggle '+(s.remindersEnabled==='true'||s.remindersEnabled===true?'on':'')+'" onclick="toggleSetting(this,\'remindersEnabled\')"></button></div>'+
+  '</div>';
+
+  html += '<div class="settings-group"><h4>Data</h4>'+
+    '<div class="settings-row"><button class="link-btn" style="text-align:left;flex:1;" onclick="exportCSV()">Ekspor semua transaksi (CSV)</button></div>'+
+    '<div class="settings-row"><button class="link-btn" style="text-align:left;flex:1;" onclick="doExport(\'Excel\')">Ekspor laporan bulan ini (Excel)</button></div>'+
+    '<div class="settings-row"><button class="link-btn" style="text-align:left;flex:1;" onclick="exportAllData()">Ekspor target & alokasi (Excel)</button></div>'+
+    '<div class="settings-row single" style="border-top:1px solid var(--hairline);"><button style="color:var(--down);background:none;border:none;text-align:left;flex:1;font-weight:600;" onclick="confirmResetData()">Reset semua data</button></div>'+
+  '</div>';
+
+  html += '<div class="settings-group"><h4>Tentang</h4>'+
+    '<div class="settings-row single"><span>FinTrack</span><span style="color:var(--muted);">v2.0 · Binance theme</span></div>'+
+  '</div>';
+
+  setTimeout(renderSettingsInstallBanner, 10);
+  return html;
+}
+function saveSettingField(key,val){ var u={}; u[key]=val; gs('updateSettings',u).then(function(s){STATE.settings=s;persistCache();}); }
+function toggleSetting(btn,key){ btn.classList.toggle('on'); var u={}; u[key]=btn.classList.contains('on'); gs('updateSettings',u).then(function(s){STATE.settings=s;persistCache();}); }
+
+function renderSettingsInstallBanner(){
+  var slot = el('install-banner-slot');
+  if(!slot) return;
+  if(deferredInstallPrompt){
+    slot.innerHTML = '<div class="install-banner">📲 <span>Install FinTrack ke perangkatmu</span><button class="btn btn-primary btn-sm" onclick="triggerInstall()">Pasang</button></div>';
+  } else { slot.innerHTML=''; }
+}
+function triggerInstall(){
+  if(deferredInstallPrompt){ deferredInstallPrompt.prompt(); deferredInstallPrompt.userChoice.then(function(){ deferredInstallPrompt=null; renderSettingsInstallBanner(); }); }
+}
+
+function exportCSV(){
+  if(STATE.transactions.length===0){ toast('Tidak ada data untuk diekspor.'); return; }
+  var rows = [['Tanggal','Tipe','Kategori','Catatan','Jumlah']];
+  STATE.transactions.forEach(function(t){ rows.push([t.date, t.type==='income'?'Pemasukan':'Pengeluaran', catInfo(t.type,t.category).label, t.note||'', t.amount]); });
+  var csv = rows.map(function(r){ return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); }).join('\n');
+  var blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download='FinTrack_Transaksi.csv'; document.body.appendChild(a); a.click();
+  setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+}
+function exportAllData(){
+  showLoading(true);
+  gs('exportAllDataExcel').then(function(res){ showLoading(false); downloadBase64(res.base64,res.filename,res.mime); toast('Data berhasil diekspor'); });
+}
+function confirmResetData(){
+  confirmAction('Reset semua data?','Semua transaksi dan target akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.', function(){
+    showLoading(true);
+    gs('resetAllData').then(function(){
+      STATE.transactions=[]; STATE.goals=[]; persistCache(); showLoading(false); closeModal('modal-confirm'); render(); toast('Semua data direset');
+    });
+  });
+}
+
+/* ============================== CONFIRM DIALOG ============================== */
+function confirmAction(title, body, onOk){
+  el('confirm-title').textContent = title;
+  el('confirm-body').textContent = body;
+  el('confirm-ok-btn').onclick = onOk;
+  openModal('modal-confirm');
+}
+
+/* ============================== QUICK ENTRY (Numpad) ============================== */
+function openQuickEntry(){
+  STATE.entryType='expense'; STATE.entryAmountStr='0'; STATE.entryCategory=null; STATE.entryNote=''; STATE.entryDate=todayISO();
+  el('entry-note').value=''; el('entry-date-custom').value=STATE.entryDate;
+  setEntryType('expense');
+  el('date-today').classList.add('btn-primary'); el('date-yesterday').classList.remove('btn-primary');
+  openModal('modal-entry');
+}
+function setEntryType(type){
+  STATE.entryType=type; STATE.entryCategory=null;
+  el('type-expense').classList.toggle('active', type==='expense');
+  el('type-income').classList.toggle('active', type==='income');
+  el('save-entry-btn').textContent = 'Simpan '+(type==='expense'?'pengeluaran':'pemasukan');
+  renderNumpadCats(); renderNumpadAmount();
+}
+function renderNumpadCats(){
+  var cats = STATE.entryType==='income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  el('numpad-cats').innerHTML = cats.map(function(c){
+    return '<div class="numpad-cat '+(STATE.entryCategory===c.id?'active':'')+'" onclick="selectEntryCat(\''+c.id+'\')"><span class="em">'+c.emoji+'</span>'+c.label+'</div>';
+  }).join('');
+}
+function selectEntryCat(id){ STATE.entryCategory=id; renderNumpadCats(); }
+function renderNumpadAmount(){ el('numpad-amount').textContent = formatIDR(Number(STATE.entryAmountStr||'0')); }
+function renderNumpadGrid(){
+  var keys = ['1','2','3','4','5','6','7','8','9','000','0','⌫'];
+  el('numpad-grid').innerHTML = keys.map(function(k){ return '<button onclick="numpadPress(\''+k+'\')">'+k+'</button>'; }).join('');
+}
+function numpadPress(k){
+  var s = STATE.entryAmountStr;
+  if(k==='⌫'){ s = s.slice(0,-1); if(!s) s='0'; }
+  else if(k==='000'){ s = s==='0' ? '0' : s+'000'; }
+  else { s = s==='0' ? k : s+k; }
+  if(s.replace(/^0+/,'').length>12) return;
+  STATE.entryAmountStr = s; renderNumpadAmount();
+}
+function setEntryDate(mode){
+  var d = new Date();
+  if(mode==='yesterday') d.setDate(d.getDate()-1);
+  if(mode==='custom'){ STATE.entryDate = el('entry-date-custom').value || todayISO(); }
+  else { STATE.entryDate = todayISO(d); }
+  el('date-today').className = 'btn btn-sm ' + (mode==='today'?'btn-primary':'btn-outline');
+  el('date-yesterday').className = 'btn btn-sm ' + (mode==='yesterday'?'btn-primary':'btn-outline');
+}
+function saveEntry(){
+  var amount = Number(STATE.entryAmountStr)||0;
+  if(amount<=0){ toast('Masukkan jumlah yang valid'); return; }
+  if(!STATE.entryCategory){ toast('Pilih kategori terlebih dahulu'); return; }
+  var payload = { type: STATE.entryType, amount: amount, category: STATE.entryCategory, note: el('entry-note').value.trim(), date: STATE.entryDate, isRecurring:false };
+  showLoading(true);
+  gs('addTransaction', payload).then(function(res){
+    STATE.transactions.unshift(res.transaction);
+    if(res.allocationBreakdown && res.allocationBreakdown.length){
+      gs('listGoals').then(function(goals){ STATE.goals=goals; persistCache(); });
+      var summary = res.allocationBreakdown.map(function(a){ return a.goalName+' +'+formatShort(a.amount); }).join(', ');
+      toast('Alokasi otomatis: '+summary);
+    }
+    persistCache(); showLoading(false); closeModal('modal-entry'); render();
+    var txId = res.transaction.id;
+    toast('Tersimpan', 'Batalkan?', function(){
+      gs('deleteTransaction', txId).then(function(){ STATE.transactions = STATE.transactions.filter(function(t){return t.id!==txId;}); gs('listGoals').then(function(goals){STATE.goals=goals;persistCache();render();}); });
+    });
+  }).catch(function(err){ showLoading(false); toast('Gagal menyimpan transaksi'); console.error(err); });
+}
+renderNumpadGrid();
+
+function persistCache(){
+  try{ localStorage.setItem('fintrack_cache_v1', JSON.stringify({transactions:STATE.transactions, goals:STATE.goals, settings:STATE.settings})); }catch(e){}
+}
+
+/* ============================== INIT ============================== */
+boot();
+</script>
+</body>
+</html>
