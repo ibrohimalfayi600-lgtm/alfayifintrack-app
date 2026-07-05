@@ -1,7 +1,7 @@
 {
-  "name": "FinTrack — Personal Finance",
-  "short_name": "FinTrack",
-  "description": "Aplikasi keuangan pribadi dengan alokasi pemasukan otomatis.",
+  "name": "AlfayiFinTrack",
+  "short_name": "AlfayiFinTrack",
+  "description": "Aplikasi keuangan pribadi dengan alokasi gajian & kantong otomatis.",
   "start_url": "./index.html",
   "scope": "./",
   "id": "./index.html",

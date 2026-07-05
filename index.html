@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#0B0E11">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FinTrack">
+<meta name="apple-mobile-web-app-title" content="AlfayiFinTrack">
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<title>FinTrack</title>
+<title>AlfayiFinTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -307,14 +307,14 @@ main{padding:16px; padding-bottom:calc(80px + env(safe-area-inset-bottom)); max-
 <body>
 
 <div id="splash">
-  <div class="logo-box">FT</div>
-  <div class="brand">FinTrack</div>
+  <div class="logo-box"><img src="./logo-small.png" alt="AlfayiFinTrack" style="width:100%;height:100%;object-fit:contain;border-radius:22px;"></div>
+  <div class="brand">AlfayiFinTrack</div>
   <div class="spin"></div>
 </div>
 
 <div id="app">
   <aside class="sidebar">
-    <div class="brand">FinTrack</div>
+    <div class="brand" style="display:flex;align-items:center;gap:10px;"><img src="./logo-small.png" alt="logo" style="width:32px;height:32px;object-fit:contain;border-radius:8px;">AlfayiFinTrack</div>
     <nav id="sidebar-nav"></nav>
     <button class="btn btn-primary btn-block add-btn" onclick="openQuickEntry()">+ Tambah Transaksi</button>
   </aside>
@@ -345,6 +345,7 @@ main{padding:16px; padding-bottom:calc(80px + env(safe-area-inset-bottom)); max-
       <div class="numpad-amount" id="numpad-amount">Rp 0</div>
     </div>
     <div class="numpad-cats" id="numpad-cats"></div>
+    <div id="entry-pocket-row" style="padding:0 18px;"></div>
     <div style="padding:0 18px;">
       <input type="text" class="search-input" id="entry-note" placeholder="Catatan (opsional)" style="margin-bottom:0;">
     </div>
@@ -407,24 +408,10 @@ main{padding:16px; padding-bottom:calc(80px + env(safe-area-inset-bottom)); max-
       <div class="live-calc" id="goal-live-calc">Perlu ditabung per bulan: <b>Rp 0</b></div>
 
       <div class="toggle-row">
-        <span>Setup alokasi dari pemasukan sekarang?</span>
-        <button class="toggle" id="goal-alloc-toggle" onclick="toggleEl('goal-alloc-toggle')"></button>
+        <span>💸 Bisa dipakai untuk pengeluaran (jadi kantong, mis. Dana Darurat)</span>
+        <button class="toggle" id="goal-allow-expense-toggle" onclick="toggleEl('goal-allow-expense-toggle')"></button>
       </div>
-      <div id="goal-alloc-fields" style="display:none;">
-        <div class="field">
-          <label>Jenis alokasi</label>
-          <input type="text" id="goal-alloc-type" placeholder="[Goal name] — bulanan">
-        </div>
-        <div class="field">
-          <label>Persentase (%)</label>
-          <input type="number" id="goal-alloc-pct" min="0" max="100" placeholder="0">
-        </div>
-        <div class="toggle-row">
-          <span>Otomatis setiap pemasukan?</span>
-          <button class="toggle on" id="goal-alloc-auto-toggle" onclick="toggleEl('goal-alloc-auto-toggle')"></button>
-        </div>
-        <div class="hint">Bisa ditambah lagi nanti dari halaman Target.</div>
-      </div>
+      <div class="hint">Kalau aktif, kantong ini akan muncul sebagai pilihan sumber dana saat mencatat pengeluaran.</div>
 
       <button class="btn btn-primary btn-block" style="margin-top:8px;" onclick="saveGoal()">Simpan target</button>
       <button class="btn btn-danger btn-block" style="margin-top:10px;display:none;" id="goal-delete-btn" onclick="removeGoal()">Hapus target</button>
@@ -444,30 +431,37 @@ main{padding:16px; padding-bottom:calc(80px + env(safe-area-inset-bottom)); max-
   </div>
 </div>
 
-<!-- ============ MODAL: Allocation Item ============ -->
-<div class="overlay" id="modal-alloc">
+<!-- ============ MODAL: Aturan Alokasi Gajian ============ -->
+<div class="overlay" id="modal-salary-rules">
   <div class="sheet">
-    <div class="sheet-head"><h3 id="alloc-modal-title">Tambah alokasi</h3><button class="icon-btn" onclick="closeModal('modal-alloc')">✕</button></div>
+    <div class="sheet-head"><h3>⚡ Aturan Alokasi Gajian</h3><button class="icon-btn" onclick="closeModal('modal-salary-rules')">✕</button></div>
     <div class="sheet-body">
-      <input type="hidden" id="alloc-goal-id"><input type="hidden" id="alloc-item-id">
-      <div class="field">
-        <label>Jenis alokasi</label>
-        <input type="text" id="alloc-type" placeholder='Contoh: "Cicilan motor 30%", "Dana darurat 20%"'>
-      </div>
-      <div class="field">
-        <label>Persentase (%)</label>
-        <input type="number" id="alloc-pct" min="0" max="100" placeholder="0" oninput="updateAllocTotalHint()">
-        <div class="hint" id="alloc-total-hint">Total alokasi: 0%</div>
-      </div>
-      <div class="field">
-        <label>Mode</label>
-        <div class="radio-row">
-          <label class="radio-opt"><input type="radio" name="alloc-mode" value="auto" checked> Otomatis — gunakan setiap ada pemasukan</label>
-          <label class="radio-opt"><input type="radio" name="alloc-mode" value="manual"> Manual — tanyakan saat ada pemasukan</label>
+      <div class="hint" style="margin-bottom:14px;">Setiap kamu catat pemasukan dengan kategori <b>Gaji</b>, jumlahnya akan otomatis dibagi ke kantong sesuai urutan aturan di bawah. Nominal tetap & persentase diproses dulu, sisanya masuk ke aturan bertipe "Sisa".</div>
+      <div id="salary-rules-list"></div>
+      <div id="salary-rule-form" style="display:none;margin-top:14px;border-top:1px solid var(--hairline);padding-top:14px;">
+        <div class="field">
+          <label>Kantong tujuan</label>
+          <select id="rule-pocket-id"></select>
         </div>
+        <div class="field">
+          <label>Mode</label>
+          <select id="rule-mode" onchange="onRuleModeChange()">
+            <option value="fixed">Nominal tetap (Rp)</option>
+            <option value="percentage">Persentase (%)</option>
+            <option value="remainder">Sisa (semua yang tersisa)</option>
+          </select>
+        </div>
+        <div class="field" id="rule-amount-field">
+          <label>Jumlah (Rp)</label>
+          <input type="number" id="rule-amount" placeholder="0">
+        </div>
+        <div class="field" id="rule-pct-field" style="display:none;">
+          <label>Persentase (%)</label>
+          <input type="number" id="rule-pct" min="0" max="100" placeholder="0">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="saveRule()">Simpan aturan</button>
       </div>
-      <button class="btn btn-primary btn-block" onclick="saveAllocItem()">Simpan</button>
-      <button class="btn btn-danger btn-block" style="margin-top:10px;display:none;" id="alloc-delete-btn" onclick="removeAllocItem()">Hapus alokasi</button>
+      <button class="btn btn-outline gold btn-block" style="margin-top:14px;" id="add-rule-btn" onclick="openRuleForm()">+ Tambah aturan</button>
     </div>
   </div>
 </div>
@@ -477,7 +471,7 @@ main{padding:16px; padding-bottom:calc(80px + env(safe-area-inset-bottom)); max-
   <div class="sheet">
     <div class="sheet-body" style="text-align:center;padding:32px 24px;">
       <div style="font-size:40px;margin-bottom:10px;">👋</div>
-      <h3 style="color:#fff;">Selamat datang di FinTrack</h3>
+      <h3 style="color:#fff;">Selamat datang di AlfayiFinTrack</h3>
       <p style="color:var(--muted);font-size:13px;line-height:1.6;">Mulai dengan menambahkan target keuangan dan mencatat transaksi harianmu.</p>
       <button class="btn btn-primary btn-block" onclick="closeModal('modal-welcome'); goToPage('goals');">Ayo mulai</button>
       <button class="btn btn-outline btn-block" style="margin-top:10px;" onclick="closeModal('modal-welcome')">Nanti saja</button>
@@ -503,7 +497,7 @@ main{padding:16px; padding-bottom:calc(80px + env(safe-area-inset-bottom)); max-
    Tempel URL Web App Apps Script kamu (hasil Deploy > Web app) di bawah ini.
    Contoh: "https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxx/exec"
    ============================================================== */
-var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJ9tIKMVKPtrCm-AWAeHcxdBrKw-M4vrqc52px42pJXlFEnOsWAxlB8k_vU8FmgEqo/exec";
+var APPS_SCRIPT_URL = "PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI";
 
 /* ============================== CONSTANTS ============================== */
 var EXPENSE_CATEGORIES = [
@@ -693,7 +687,15 @@ function renderDashboard(){
 
   var sortedGoals = STATE.goals.slice().sort(function(a,b){ return monthsLeft(a)-monthsLeft(b); }).slice(0,3);
 
-  var goalsHtml = STATE.goals.length===0 ? emptyState('🎯','Mulai dengan target pertamamu','Tentukan tujuan keuangan dan FinTrack akan membantu kamu mencapainya dengan alokasi otomatis.','Tambah target',"openGoalModal()") :
+  var pocketsHtml = STATE.goals.length===0 ? '' :
+    '<div class="section-head"><div class="section-title">💰 Saldo Kantong</div></div>'+
+    '<div class="stats-row" style="grid-template-columns:repeat('+Math.min(3,STATE.goals.length)+',1fr);">'+
+      STATE.goals.map(function(g){
+        return '<div class="stat-card" style="text-align:left;"><div class="lbl">'+g.emoji+' '+esc(g.name)+'</div><div class="val" style="color:'+g.color+'">'+formatShort(g.savedAmount)+'</div></div>';
+      }).join('')+
+    '</div>';
+
+  var goalsHtml = STATE.goals.length===0 ? emptyState('🎯','Mulai dengan kantong pertamamu','Buat kantong seperti Dana Nikah, Dana Darurat, atau Self Reward, lalu atur alokasi gajian otomatis.','Tambah kantong',"openGoalModal()") :
     sortedGoals.map(function(g){ return dashGoalCard(g); }).join('');
 
   var recent = STATE.transactions.slice(0,5);
@@ -702,7 +704,7 @@ function renderDashboard(){
 
   return ''+
   '<div class="hero">'+
-    '<div class="hero-top"><div><div class="greet">FinTrack</div><div class="sub">'+greet+', '+esc(STATE.settings.userName||'Kamu')+'</div></div><div class="avatar">'+initials+'</div></div>'+
+    '<div class="hero-top"><div><div class="greet">AlfayiFinTrack</div><div class="sub">'+greet+', '+esc(STATE.settings.userName||'Kamu')+'</div></div><div class="avatar">'+initials+'</div></div>'+
     '<div class="balance-label">Saldo bersih bulan ini</div>'+
     '<div class="balance-amount '+(balance<0?'neg':'')+'">'+formatIDR(balance)+'</div>'+
     '<div class="mini-cards">'+
@@ -712,7 +714,8 @@ function renderDashboard(){
     '<div class="rate-row"><span>Saving rate bulan ini</span><span>'+savingRate+'%</span></div>'+
     '<div class="progress-track"><div class="progress-fill up" style="width:'+Math.max(0,Math.min(100,savingRate))+'%"></div></div>'+
   '</div>'+
-  '<div class="section-head"><div class="section-title">Target aktif</div><button class="link-btn" onclick="goToPage(\'goals\')">Lihat semua</button></div>'+
+  pocketsHtml+
+  '<div class="section-head"><div class="section-title">Kantong & Target</div><button class="link-btn" onclick="goToPage(\'goals\')">Lihat semua</button></div>'+
   goalsHtml+
   '<div class="section-head"><div class="section-title">Transaksi terbaru</div><button class="link-btn" onclick="goToPage(\'transactions\')">Lihat semua</button></div>'+
   recentHtml;
@@ -722,25 +725,16 @@ function monthsLeft(g){
   var remain = Math.max(0, g.durationYears*12);
   return remain;
 }
-function totalAllocPct(g){ return (g.allocations||[]).reduce(function(s,a){return s+Number(a.percentage||0);},0); }
 function monthlyRequired(g){ var d=g.durationYears*12; return d? Math.max(0,(g.targetAmount-g.savedAmount)/d) : 0; }
 
 function dashGoalCard(g){
   var pct = g.targetAmount? Math.min(100, Math.round(g.savedAmount/g.targetAmount*100)) : 0;
-  var aid = 'dash-alloc-'+g.id;
-  var alloc = g.allocations||[];
   return '<div class="goal-card">'+
-    '<div class="goal-top"><div class="goal-emoji">'+g.emoji+'</div><div class="goal-name">'+esc(g.name)+'</div><div class="badge pct">'+pct+'%</div></div>'+
-    '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+g.color+'"></div></div>'+
-    '<div class="goal-meta" style="margin-top:8px;">Terkumpul '+formatIDR(g.savedAmount)+' dari '+formatIDR(g.targetAmount)+'</div>'+
-    (alloc.length ? '<div class="goal-alloc-line" onclick="toggleDashAlloc(\''+aid+'\')">Alokasi: '+totalAllocPct(g)+'% dari pemasukan ▾</div>' : '')+
-    '<div class="alloc-box" id="'+aid+'">'+
-      alloc.map(function(a){ return '<div class="alloc-item"><span class="type">'+esc(a.type)+'</span><span class="badge pct">'+a.percentage+'%</span></div>'; }).join('')+
-      (alloc.length? '<div class="alloc-total"><span>Total</span><span>'+totalAllocPct(g)+'%</span></div>' : '')+
-    '</div>'+
+    '<div class="goal-top"><div class="goal-emoji">'+g.emoji+'</div><div class="goal-name">'+esc(g.name)+'</div>'+(g.targetAmount?'<div class="badge pct">'+pct+'%</div>':'')+(g.allowExpense?'<span class="badge green">Kantong</span>':'')+'</div>'+
+    (g.targetAmount?'<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+g.color+'"></div></div>':'')+
+    '<div class="goal-meta" style="margin-top:8px;">Saldo '+formatIDR(g.savedAmount)+(g.targetAmount?' dari '+formatIDR(g.targetAmount):'')+'</div>'+
   '</div>';
 }
-function toggleDashAlloc(id){ el(id).classList.toggle('open'); }
 
 function emptyState(icon,title,body,btnLabel,onclick){
   return '<div class="empty-state"><div class="icon">'+icon+'</div><div class="title">'+title+'</div><div class="body">'+body+'</div>'+
@@ -775,43 +769,29 @@ function goalFullCard(g){
   var pct = g.targetAmount ? Math.min(100, Math.round(g.savedAmount/g.targetAmount*100)) : 0;
   var perMonth = monthlyRequired(g);
   var eta = new Date(); eta.setMonth(eta.getMonth()+g.durationYears*12);
-  var alloc = g.allocations||[];
-  var expanded = !!STATE.goalAllocExpanded[g.id];
   return '<div class="goal-card">'+
     '<div class="goal-top"><div class="goal-emoji">'+g.emoji+'</div><div class="goal-name">'+esc(g.name)+'</div>'+
+      (g.allowExpense?'<span class="badge green">Kantong pengeluaran</span>':'')+
       '<button class="icon-btn" onclick="openGoalModal(\''+g.id+'\')">✎</button>'+
       '<button class="icon-btn" onclick="confirmDeleteGoal(\''+g.id+'\')">🗑</button>'+
     '</div>'+
-    '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+g.color+'"></div></div>'+
+    (g.targetAmount?'<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%;background:'+g.color+'"></div></div>':'')+
     '<div class="goal-stats">'+
-      '<div><div class="lbl">Terkumpul</div><div class="val">'+formatShort(g.savedAmount)+'</div></div>'+
-      '<div><div class="lbl">Target</div><div class="val">'+formatShort(g.targetAmount)+'</div></div>'+
-      '<div><div class="lbl">Per bulan</div><div class="val gold">'+formatShort(perMonth)+'</div></div>'+
+      '<div><div class="lbl">Saldo</div><div class="val">'+formatShort(g.savedAmount)+'</div></div>'+
+      (g.targetAmount?'<div><div class="lbl">Target</div><div class="val">'+formatShort(g.targetAmount)+'</div></div>':'<div></div>')+
+      (g.targetAmount?'<div><div class="lbl">Per bulan</div><div class="val gold">'+formatShort(perMonth)+'</div></div>':'<div></div>')+
     '</div>'+
-    '<div class="goal-meta">'+g.durationYears+' tahun · selesai sekitar '+MONTHS_ID[eta.getMonth()]+' '+eta.getFullYear()+'</div>'+
+    (g.targetAmount?'<div class="goal-meta">'+g.durationYears+' tahun · selesai sekitar '+MONTHS_ID[eta.getMonth()]+' '+eta.getFullYear()+'</div>':'')+
     (g.reminderEnabled ? '<div class="goal-meta">🔔 Pengingat tgl '+g.reminderDay+' setiap bulan</div>' : '')+
-    '<div class="goal-alloc-line" onclick="toggleGoalAlloc(\''+g.id+'\')">Alokasi dari pemasukan '+(expanded?'▴':'▾')+'</div>'+
-    '<div class="alloc-box '+(expanded?'open':'')+'" id="goal-alloc-'+g.id+'">'+
-      (alloc.length===0 ? '<div class="hint" style="padding:6px 0;">Belum ada alokasi. Tap \'Tambah alokasi\' untuk mulai.</div>' :
-        alloc.map(function(a){
-          return '<div class="alloc-item" onclick="openAllocModal(\''+g.id+'\',\''+a.id+'\')" style="cursor:pointer;">'+
-            '<button class="icon-btn" onclick="event.stopPropagation();confirmDeleteAlloc(\''+g.id+'\',\''+a.id+'\')">🗑</button>'+
-            '<span class="type">'+esc(a.type)+'</span><span class="badge pct">'+a.percentage+'%</span>'+
-            '<span class="badge '+(a.isAutomatic?'auto':'')+'">'+(a.isAutomatic?'Otomatis':'Manual')+'</span>'+
-          '</div>';
-        }).join('') + '<div class="alloc-total"><span>Total dari pemasukan</span><span>'+totalAllocPct(g)+'%</span></div>')+
-      '<button class="btn btn-outline gold btn-sm" style="margin-top:10px;" onclick="openAllocModal(\''+g.id+'\')">+ Tambah alokasi</button>'+
-    '</div>'+
     '<div class="goal-actions"><button class="btn btn-primary btn-block" onclick="openDepositModal(\''+g.id+'\')">Setor tabungan</button></div>'+
   '</div>';
 }
-function toggleGoalAlloc(id){ STATE.goalAllocExpanded[id] = !STATE.goalAllocExpanded[id]; render(); }
 
 /* ---- Goal modal ---- */
 function openGoalModal(id){
   var g = id ? STATE.goals.filter(function(x){return x.id===id;})[0] : null;
   el('goal-id').value = id || '';
-  el('goal-modal-title').textContent = g ? 'Edit target' : 'Tambah target';
+  el('goal-modal-title').textContent = g ? 'Edit kantong/target' : 'Tambah kantong/target';
   el('goal-name').value = g ? g.name : '';
   el('goal-target').value = g ? g.targetAmount : '';
   el('goal-saved').value = g ? g.savedAmount : '';
@@ -819,14 +799,10 @@ function openGoalModal(id){
   el('goal-reminder-day').value = g ? g.reminderDay : 1;
   el('goal-reminder-toggle').classList.toggle('on', g ? !!g.reminderEnabled : false);
   el('goal-delete-btn').style.display = g ? 'block' : 'none';
-  el('goal-alloc-toggle').classList.remove('on');
-  el('goal-alloc-fields').style.display='none';
-  el('goal-alloc-type').value=''; el('goal-alloc-pct').value='';
-  el('goal-alloc-auto-toggle').classList.add('on');
+  el('goal-allow-expense-toggle').classList.toggle('on', g ? !!g.allowExpense : false);
   renderEmojiGrid(g ? g.emoji : GOAL_EMOJIS[0]);
   updateGoalLiveCalc();
   ['goal-target','goal-saved','goal-duration'].forEach(function(id2){ el(id2).oninput = updateGoalLiveCalc; el(id2).onchange = updateGoalLiveCalc; });
-  el('goal-alloc-toggle').onclick = function(){ toggleEl('goal-alloc-toggle'); el('goal-alloc-fields').style.display = isOn('goal-alloc-toggle') ? 'block':'none'; if(isOn('goal-alloc-toggle') && !el('goal-alloc-type').value){ el('goal-alloc-type').value = (el('goal-name').value||'Target')+' — bulanan'; } };
   openModal('modal-goal');
 }
 function renderEmojiGrid(selected){
@@ -842,13 +818,12 @@ function selectEmoji(btn, e){
 function updateGoalLiveCalc(){
   var target = Number(el('goal-target').value)||0, saved = Number(el('goal-saved').value)||0, dur = Number(el('goal-duration').value)||1;
   var perMonth = dur>0 ? Math.max(0,(target-saved)/(dur*12)) : 0;
-  el('goal-live-calc').innerHTML = 'Perlu ditabung per bulan: <b>'+formatIDR(perMonth)+'</b>';
-  el('goal-saved-hint').textContent = (target && saved>=target) ? '' : '';
+  el('goal-live-calc').innerHTML = target>0 ? ('Perlu ditabung per bulan: <b>'+formatIDR(perMonth)+'</b>') : 'Isi target jumlah kalau ini kantong tabungan bertarget (opsional).';
 }
 function saveGoal(){
   var id = el('goal-id').value;
   var target = Number(el('goal-target').value)||0, saved = Number(el('goal-saved').value)||0;
-  if(!el('goal-name').value.trim()){ toast('Nama target wajib diisi'); return; }
+  if(!el('goal-name').value.trim()){ toast('Nama kantong/target wajib diisi'); return; }
   if(target>0 && saved>target){ toast('Target harus lebih besar dari yang terkumpul.'); return; }
   var payload = {
     name: el('goal-name').value.trim(),
@@ -856,30 +831,28 @@ function saveGoal(){
     targetAmount: target, savedAmount: saved,
     durationYears: Number(el('goal-duration').value)||1,
     reminderEnabled: isOn('goal-reminder-toggle'),
-    reminderDay: Number(el('goal-reminder-day').value)||1
+    reminderDay: Number(el('goal-reminder-day').value)||1,
+    allowExpense: isOn('goal-allow-expense-toggle')
   };
   showLoading(true);
   if(id){
     gs('updateGoal', id, payload).then(function(g){
       var idx = STATE.goals.findIndex(function(x){return x.id===id;});
-      STATE.goals[idx]=g; persistCache(); showLoading(false); closeModal('modal-goal'); render(); toast('Target diperbarui');
+      STATE.goals[idx]=g; persistCache(); showLoading(false); closeModal('modal-goal'); render(); toast('Kantong diperbarui');
     });
   } else {
-    if(isOn('goal-alloc-toggle') && Number(el('goal-alloc-pct').value)>0){
-      payload.allocations = [{type: el('goal-alloc-type').value || (payload.name+' — bulanan'), percentage: Number(el('goal-alloc-pct').value), isAutomatic: isOn('goal-alloc-auto-toggle')}];
-    }
     gs('addGoal', payload).then(function(g){
-      STATE.goals.push(g); persistCache(); showLoading(false); closeModal('modal-goal'); render(); toast('Target ditambahkan');
+      STATE.goals.push(g); persistCache(); showLoading(false); closeModal('modal-goal'); render(); toast('Kantong ditambahkan');
     });
   }
 }
 function removeGoal(){
   var id = el('goal-id').value;
-  confirmAction('Hapus target?','Semua alokasi pada target ini juga akan dihapus.', function(){
+  confirmAction('Hapus kantong ini?','Saldo di dalamnya akan hilang dari pencatatan.', function(){
     showLoading(true);
     gs('deleteGoal', id).then(function(){
       STATE.goals = STATE.goals.filter(function(g){return g.id!==id;});
-      persistCache(); showLoading(false); closeModal('modal-goal'); closeModal('modal-confirm'); render(); toast('Target dihapus');
+      persistCache(); showLoading(false); closeModal('modal-goal'); closeModal('modal-confirm'); render(); toast('Kantong dihapus');
     });
   });
 }
@@ -900,52 +873,71 @@ function saveDeposit(){
   });
 }
 
-/* ---- Allocation item modal ---- */
-function openAllocModal(goalId, itemId){
-  var g = STATE.goals.filter(function(x){return x.id===goalId;})[0];
-  var item = itemId ? (g.allocations||[]).filter(function(a){return a.id===itemId;})[0] : null;
-  el('alloc-goal-id').value = goalId; el('alloc-item-id').value = itemId||'';
-  el('alloc-modal-title').textContent = item ? 'Edit alokasi' : 'Tambah alokasi';
-  el('alloc-type').value = item ? item.type : (g.name+' — bulanan');
-  el('alloc-pct').value = item ? item.percentage : '';
-  document.querySelectorAll('input[name=alloc-mode]').forEach(function(r){ r.checked = item ? (item.isAutomatic ? r.value==='auto' : r.value==='manual') : r.value==='auto'; });
-  el('alloc-delete-btn').style.display = item ? 'block' : 'none';
-  updateAllocTotalHint();
-  openModal('modal-alloc');
+/* ---- Aturan Alokasi Gajian (global) ---- */
+var salaryRuleEditingId = null;
+function openSalaryRulesModal(){
+  renderSalaryRulesList();
+  el('salary-rule-form').style.display='none';
+  el('add-rule-btn').style.display='block';
+  openModal('modal-salary-rules');
 }
-function updateAllocTotalHint(){
-  var goalId = el('alloc-goal-id').value;
-  var g = STATE.goals.filter(function(x){return x.id===goalId;})[0];
-  if(!g) return;
-  var itemId = el('alloc-item-id').value;
-  var others = (g.allocations||[]).filter(function(a){return a.id!==itemId;}).reduce(function(s,a){return s+Number(a.percentage||0);},0);
-  var total = others + (Number(el('alloc-pct').value)||0);
-  var hint = el('alloc-total-hint');
-  hint.textContent = 'Total alokasi: '+total+'%';
-  hint.className = 'hint' + (total>100 ? ' warn':'');
-  if(total>100) hint.textContent += ' — Perhatian: total alokasi melebihi 100%';
+function renderSalaryRulesList(){
+  var rules = STATE.settings.salaryAllocationRules || [];
+  var goalMap = {}; STATE.goals.forEach(function(g){ goalMap[g.id]=g; });
+  var box = el('salary-rules-list');
+  if(!STATE.goals.length){
+    box.innerHTML = '<div class="hint">Buat minimal satu kantong dulu di halaman Target sebelum atur aturan gajian.</div>';
+    return;
+  }
+  if(!rules.length){
+    box.innerHTML = '<div class="hint">Belum ada aturan. Semua pemasukan "Gaji" akan masuk sebagai saldo umum kalau belum diatur.</div>';
+    return;
+  }
+  box.innerHTML = rules.map(function(r, idx){
+    var g = goalMap[r.pocketId];
+    var label = r.mode==='fixed' ? formatIDR(r.amount) : (r.mode==='percentage' ? r.percentage+'%' : 'Sisa');
+    return '<div class="alloc-item"><span class="type">'+(idx+1)+'. '+(g?g.emoji+' '+esc(g.name):'(kantong dihapus)')+'</span>'+
+      '<span class="badge pct">'+label+'</span>'+
+      '<button class="icon-btn" onclick="deleteSalaryRule('+idx+')">🗑</button></div>';
+  }).join('');
 }
-function saveAllocItem(){
-  var goalId = el('alloc-goal-id').value, itemId = el('alloc-item-id').value;
-  var payload = { type: el('alloc-type').value.trim()||'Alokasi', percentage: Number(el('alloc-pct').value)||0, isAutomatic: document.querySelector('input[name=alloc-mode]:checked').value==='auto' };
+function openRuleForm(){
+  el('rule-pocket-id').innerHTML = STATE.goals.map(function(g){ return '<option value="'+g.id+'">'+g.emoji+' '+esc(g.name)+'</option>'; }).join('');
+  el('rule-mode').value='fixed'; onRuleModeChange();
+  el('rule-amount').value=''; el('rule-pct').value='';
+  el('salary-rule-form').style.display='block';
+  el('add-rule-btn').style.display='none';
+}
+function onRuleModeChange(){
+  var mode = el('rule-mode').value;
+  el('rule-amount-field').style.display = mode==='fixed' ? 'block':'none';
+  el('rule-pct-field').style.display = mode==='percentage' ? 'block':'none';
+}
+function saveRule(){
+  var rules = (STATE.settings.salaryAllocationRules || []).slice();
+  var mode = el('rule-mode').value;
+  if(mode==='remainder' && rules.some(function(r){return r.mode==='remainder';})){
+    toast('Hanya boleh ada 1 aturan "Sisa"'); return;
+  }
+  var rule = { pocketId: el('rule-pocket-id').value, mode: mode };
+  if(mode==='fixed') rule.amount = Number(el('rule-amount').value)||0;
+  if(mode==='percentage') rule.percentage = Number(el('rule-pct').value)||0;
+  rules.push(rule);
   showLoading(true);
-  var p = itemId ? gs('updateAllocationItem', goalId, itemId, payload) : gs('addAllocationItem', goalId, payload);
-  p.then(function(g){
-    var idx = STATE.goals.findIndex(function(x){return x.id===goalId;});
-    STATE.goals[idx]=g; persistCache(); showLoading(false); closeModal('modal-alloc'); render(); toast('Alokasi disimpan');
+  gs('updateSalaryAllocationRules', rules).then(function(saved){
+    STATE.settings.salaryAllocationRules = saved; persistCache(); showLoading(false);
+    el('salary-rule-form').style.display='none'; el('add-rule-btn').style.display='block';
+    renderSalaryRulesList(); toast('Aturan ditambahkan');
   });
 }
-function removeAllocItem(){
-  var goalId = el('alloc-goal-id').value, itemId = el('alloc-item-id').value;
+function deleteSalaryRule(idx){
+  var rules = (STATE.settings.salaryAllocationRules || []).slice();
+  rules.splice(idx,1);
   showLoading(true);
-  gs('deleteAllocationItem', goalId, itemId).then(function(g){
-    var idx = STATE.goals.findIndex(function(x){return x.id===goalId;});
-    STATE.goals[idx]=g; persistCache(); showLoading(false); closeModal('modal-alloc'); render(); toast('Alokasi dihapus');
+  gs('updateSalaryAllocationRules', rules).then(function(saved){
+    STATE.settings.salaryAllocationRules = saved; persistCache(); showLoading(false);
+    renderSalaryRulesList(); toast('Aturan dihapus');
   });
-}
-function confirmDeleteAlloc(goalId,itemId){
-  el('alloc-goal-id').value=goalId; el('alloc-item-id').value=itemId;
-  removeAllocItem();
 }
 
 /* ============================== TRANSACTIONS PAGE ============================== */
@@ -1144,6 +1136,10 @@ function renderSettingsPage(){
     '<div class="settings-row"><span>Mata uang</span><span style="color:var(--muted);">IDR</span></div>'+
   '</div>';
 
+  html += '<div class="settings-group"><h4>Alokasi Otomatis</h4>'+
+    '<div class="settings-row single"><button class="link-btn" style="text-align:left;flex:1;" onclick="openSalaryRulesModal()">⚡ Atur alokasi gajian otomatis</button></div>'+
+  '</div>';
+
   html += '<div class="settings-group"><h4>Notifikasi</h4>'+
     '<div class="settings-row single"><span>Aktifkan pengingat tabungan</span><button class="toggle '+(s.remindersEnabled==='true'||s.remindersEnabled===true?'on':'')+'" onclick="toggleSetting(this,\'remindersEnabled\')"></button></div>'+
   '</div>';
@@ -1156,7 +1152,7 @@ function renderSettingsPage(){
   '</div>';
 
   html += '<div class="settings-group"><h4>Tentang</h4>'+
-    '<div class="settings-row single"><span>FinTrack</span><span style="color:var(--muted);">v2.0 · Binance theme</span></div>'+
+    '<div class="settings-row single"><span>AlfayiFinTrack</span><span style="color:var(--muted);">v2.0 · Binance theme</span></div>'+
   '</div>';
 
   setTimeout(renderSettingsInstallBanner, 10);
@@ -1169,7 +1165,7 @@ function renderSettingsInstallBanner(){
   var slot = el('install-banner-slot');
   if(!slot) return;
   if(deferredInstallPrompt){
-    slot.innerHTML = '<div class="install-banner">📲 <span>Install FinTrack ke perangkatmu</span><button class="btn btn-primary btn-sm" onclick="triggerInstall()">Pasang</button></div>';
+    slot.innerHTML = '<div class="install-banner">📲 <span>Install AlfayiFinTrack ke perangkatmu</span><button class="btn btn-primary btn-sm" onclick="triggerInstall()">Pasang</button></div>';
   } else { slot.innerHTML=''; }
 }
 function triggerInstall(){
@@ -1210,17 +1206,18 @@ function confirmAction(title, body, onOk){
 /* ============================== QUICK ENTRY (Numpad) ============================== */
 function openQuickEntry(){
   STATE.entryType='expense'; STATE.entryAmountStr='0'; STATE.entryCategory=null; STATE.entryNote=''; STATE.entryDate=todayISO();
+  STATE.entrySourcePocketId=''; STATE.entryAllocateToPocketId='';
   el('entry-note').value=''; el('entry-date-custom').value=STATE.entryDate;
   setEntryType('expense');
   el('date-today').classList.add('btn-primary'); el('date-yesterday').classList.remove('btn-primary');
   openModal('modal-entry');
 }
 function setEntryType(type){
-  STATE.entryType=type; STATE.entryCategory=null;
+  STATE.entryType=type; STATE.entryCategory=null; STATE.entrySourcePocketId=''; STATE.entryAllocateToPocketId='';
   el('type-expense').classList.toggle('active', type==='expense');
   el('type-income').classList.toggle('active', type==='income');
   el('save-entry-btn').textContent = 'Simpan '+(type==='expense'?'pengeluaran':'pemasukan');
-  renderNumpadCats(); renderNumpadAmount();
+  renderNumpadCats(); renderNumpadAmount(); renderEntryPocketRow();
 }
 function renderNumpadCats(){
   var cats = STATE.entryType==='income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -1228,7 +1225,31 @@ function renderNumpadCats(){
     return '<div class="numpad-cat '+(STATE.entryCategory===c.id?'active':'')+'" onclick="selectEntryCat(\''+c.id+'\')"><span class="em">'+c.emoji+'</span>'+c.label+'</div>';
   }).join('');
 }
-function selectEntryCat(id){ STATE.entryCategory=id; renderNumpadCats(); }
+function selectEntryCat(id){ STATE.entryCategory=id; renderNumpadCats(); renderEntryPocketRow(); }
+function renderEntryPocketRow(){
+  var box = el('entry-pocket-row');
+  if(!box) return;
+  if(STATE.entryType==='expense'){
+    var pockets = STATE.goals.filter(function(g){ return g.allowExpense; });
+    if(!pockets.length){ box.innerHTML=''; return; }
+    box.innerHTML = '<div class="field" style="margin-bottom:10px;"><label>Sumber dana</label><div class="filter-row" style="margin-bottom:0;">'+
+      '<button class="chip '+(!STATE.entrySourcePocketId?'active':'')+'" onclick="selectSourcePocket(\'\')">💳 Umum</button>'+
+      pockets.map(function(g){ return '<button class="chip '+(STATE.entrySourcePocketId===g.id?'active':'')+'" onclick="selectSourcePocket(\''+g.id+'\')">'+g.emoji+' '+esc(g.name)+' ('+formatShort(g.savedAmount)+')</button>'; }).join('')+
+    '</div></div>';
+  } else {
+    if(STATE.entryCategory==='salary'){
+      box.innerHTML = '<div class="hint" style="padding:6px 0 10px;">⚡ Alokasi otomatis sesuai Aturan Alokasi Gajian (atur di halaman Pengaturan).</div>';
+      return;
+    }
+    if(!STATE.goals.length){ box.innerHTML=''; return; }
+    box.innerHTML = '<div class="field" style="margin-bottom:10px;"><label>Masukkan ke kantong (opsional)</label><div class="filter-row" style="margin-bottom:0;">'+
+      '<button class="chip '+(!STATE.entryAllocateToPocketId?'active':'')+'" onclick="selectAllocatePocket(\'\')">Tidak, saldo umum</button>'+
+      STATE.goals.map(function(g){ return '<button class="chip '+(STATE.entryAllocateToPocketId===g.id?'active':'')+'" onclick="selectAllocatePocket(\''+g.id+'\')">'+g.emoji+' '+esc(g.name)+'</button>'; }).join('')+
+    '</div></div>';
+  }
+}
+function selectSourcePocket(id){ STATE.entrySourcePocketId=id; renderEntryPocketRow(); }
+function selectAllocatePocket(id){ STATE.entryAllocateToPocketId=id; renderEntryPocketRow(); }
 function renderNumpadAmount(){ el('numpad-amount').textContent = formatIDR(Number(STATE.entryAmountStr||'0')); }
 function renderNumpadGrid(){
   var keys = ['1','2','3','4','5','6','7','8','9','000','0','⌫'];
@@ -1255,13 +1276,17 @@ function saveEntry(){
   if(amount<=0){ toast('Masukkan jumlah yang valid'); return; }
   if(!STATE.entryCategory){ toast('Pilih kategori terlebih dahulu'); return; }
   var payload = { type: STATE.entryType, amount: amount, category: STATE.entryCategory, note: el('entry-note').value.trim(), date: STATE.entryDate, isRecurring:false };
+  if(STATE.entryType==='expense' && STATE.entrySourcePocketId) payload.sourcePocketId = STATE.entrySourcePocketId;
+  if(STATE.entryType==='income' && STATE.entryAllocateToPocketId) payload.allocateToPocketId = STATE.entryAllocateToPocketId;
   showLoading(true);
   gs('addTransaction', payload).then(function(res){
     STATE.transactions.unshift(res.transaction);
     if(res.allocationBreakdown && res.allocationBreakdown.length){
-      gs('listGoals').then(function(goals){ STATE.goals=goals; persistCache(); });
+      gs('listGoals').then(function(goals){ STATE.goals=goals; persistCache(); render(); });
       var summary = res.allocationBreakdown.map(function(a){ return a.goalName+' +'+formatShort(a.amount); }).join(', ');
       toast('Alokasi otomatis: '+summary);
+    } else if(payload.sourcePocketId){
+      gs('listGoals').then(function(goals){ STATE.goals=goals; persistCache(); render(); });
     }
     persistCache(); showLoading(false); closeModal('modal-entry'); render();
     var txId = res.transaction.id;

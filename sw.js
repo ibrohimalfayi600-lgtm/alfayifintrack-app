@@ -1,5 +1,5 @@
 var CACHE_NAME = 'fintrack-cache-v1';
-var SHELL_FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+var SHELL_FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './logo-small.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', function (event) {
   self.skipWaiting();
